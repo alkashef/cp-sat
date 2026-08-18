@@ -1,1 +1,3 @@
+flask
 ortools
+python-dotenv
