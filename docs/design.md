@@ -220,6 +220,12 @@ last-active tab persists only for the current page session (not saved to
 
 ### Tab 2: Solver
 
+- A leading read-only `objective` row states what CP-SAT is optimizing for
+  (minimizing the schedule's makespan/idle time) before the editable
+  parameter rows that control how it searches for that optimum. It follows
+  the same name/description/help-icon layout as the parameter rows below,
+  but its "value" cell is static text, not an input — the objective is
+  fixed in `scheduler.py`'s model, not a solve-time parameter.
 - One row per parameter, each showing: the parameter's name (as CP-SAT
   names it, e.g. `num_search_workers`), a short plain-language description,
   a help icon (see Help Icons below), and an editable input matched to its
@@ -276,6 +282,11 @@ tab, and once in the Schedule tab header.
   is, and specifically how it's being used in this app. Only one popover is
   open at a time; clicking elsewhere or pressing `Escape` closes it.
 - Explanation content, one entry per concept:
+  - `objective` (Solver tab) — the quantity CP-SAT minimizes once it has a
+    valid arrangement, as opposed to the parameters below it which only
+    control how it searches; here that quantity is the makespan, and
+    shrinking it packs the week tighter since it's equivalent to shrinking
+    the idle gaps between tasks.
   - `num_search_workers` — CP-SAT can search for solutions on multiple
     threads at once ("parallel search"); more workers can find a solution
     faster but use more CPU.

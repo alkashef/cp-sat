@@ -230,6 +230,11 @@ button:disabled {
     border-bottom: none;
 }
 
+.solver-objective-value {
+    color: var(--ink-muted);
+    font-style: italic;
+}
+
 #solver-params input[type="number"],
 #solver-params input[type="text"] {
     padding: 0.4rem;

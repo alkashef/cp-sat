@@ -278,6 +278,15 @@ function renderSchedule(schedule) {
 }
 
 const HELP_TEXT = {
+    objective:
+        "The objective is the quantity CP-SAT tries to minimize once it has " +
+        "a valid arrangement — unlike the parameters below, which only " +
+        "control how it searches, not what counts as a good answer. Here " +
+        "the objective is the schedule's makespan, the end time of the " +
+        "last-finishing task. Since every task's duration is fixed, " +
+        "shrinking the makespan is the same as shrinking the idle gaps " +
+        "between tasks, so minimizing it packs the week as tightly as " +
+        "possible.",
     num_search_workers:
         "CP-SAT can search for solutions on multiple threads at once " +
         "(\"parallel search\"). More workers can find a solution faster, " +
