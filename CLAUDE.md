@@ -23,7 +23,8 @@ end (no framework). See `docs/requirements.md` and `docs/design.md` for details.
 ## Code Style Rules
 
 - **Readability first.** Prefer clear, direct code over clever code.
-- **No tests.** Do not add a test suite or test files.
+- **Tests are scoped to the plan.** Add pytest tests only for the milestones that
+  call for them in `docs/plan.md`; don't grow a general test suite beyond that.
 - **No logging.** Do not add logging statements or a logging setup.
 - **No exception handling.** Do not wrap code in try/except; let errors surface
   naturally.
@@ -81,4 +82,5 @@ All configurable values (paths, solver parameters, ports, etc.) live in
 
 - Backend: Python, Flask
 - Solver: Google OR-Tools, CP-SAT
+- Testing: pytest (see "Tests are scoped to the plan" above)
 - Frontend: HTML, CSS, JavaScript (no framework)
