@@ -260,6 +260,15 @@ last-active tab persists only for the current page session (not saved to
 - A lightweight hour gridline/label down the side (e.g. every 4th row) gives
   time-of-day reference without turning this into a full calendar-library
   feature set.
+- The grid sits in a scrollable wrapper (`#schedule-grid-wrapper`) sized so
+  only the configured visible window shows without scrolling; the rest of
+  the day is reachable via a vertical scrollbar. `SCHEDULE_VISIBLE_START_HOUR`
+  and `SCHEDULE_VISIBLE_END_HOUR` in `config/.env` (default 7–24, i.e. 7am–
+  midnight) set that window. Sizing this wrapper requires measuring the
+  grid's rendered row positions, which only exist once the Schedule panel is
+  actually visible (a hidden `.tab-panel` lays out its contents at zero
+  size), so `app.js` applies it when the Schedule tab becomes active rather
+  than when the grid is (re)rendered.
 - On page load (before any Solve click in the session), the grid renders
   from the persisted `schedule` in `data/tasks.json` if present, otherwise
   shows an empty grid.

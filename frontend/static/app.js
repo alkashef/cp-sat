@@ -11,6 +11,12 @@ function switchTab(name) {
     document.querySelectorAll(".tab-panel").forEach((el) => {
         el.classList.toggle("active", el.id === `tab-${name}`);
     });
+    // The schedule grid's visible window is sized from its rendered row
+    // positions (see applyScheduleVisibleWindow), which only exist once this
+    // panel is actually displayed — a hidden panel lays out its contents at
+    // zero size. So this can only run now, after the panel above goes visible,
+    // not back when renderSchedule first populated the grid.
+    if (name === "schedule") applyScheduleVisibleWindow();
 }
 
 document.querySelectorAll(".tab").forEach((el) => {
@@ -235,6 +241,34 @@ const SCHEDULE_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const SCHEDULE_SLOT_MINUTES = 15;
 const SCHEDULE_SLOTS_PER_DAY = (24 * 60) / SCHEDULE_SLOT_MINUTES;
 
+// The Schedule tab's visible window, from config/.env (SCHEDULE_VISIBLE_START_HOUR /
+// SCHEDULE_VISIBLE_END_HOUR), so only part of the 24h grid shows without scrolling.
+const SCHEDULE_VISIBLE_START_HOUR = window.SCHEDULE_VISIBLE_START_HOUR ?? 7;
+const SCHEDULE_VISIBLE_END_HOUR = window.SCHEDULE_VISIBLE_END_HOUR ?? 24;
+
+// Distance in pixels from the top of the grid to a given hour (0-24), measured
+// from the actual rendered rows so it stays correct if row heights ever change.
+function scheduleOffsetForHour(grid, hour) {
+    if (hour >= 24) return grid.getBoundingClientRect().height;
+    const label = grid.querySelector(`.schedule-hour-label[data-hour="${hour}"]`);
+    return label.getBoundingClientRect().top - grid.getBoundingClientRect().top;
+}
+
+// Sizes the schedule wrapper so only SCHEDULE_VISIBLE_START_HOUR..END_HOUR
+// shows without scrolling. Requires the schedule panel to be visible (see
+// the "schedule" case in switchTab) since it measures rendered row
+// positions, which a hidden panel lays out at zero size.
+function applyScheduleVisibleWindow() {
+    const grid = document.getElementById("schedule-grid");
+    const wrapper = document.getElementById("schedule-grid-wrapper");
+    if (!grid.querySelector(".schedule-hour-label")) return;
+
+    const topOffset = scheduleOffsetForHour(grid, SCHEDULE_VISIBLE_START_HOUR);
+    const bottomOffset = scheduleOffsetForHour(grid, SCHEDULE_VISIBLE_END_HOUR);
+    wrapper.style.maxHeight = `${bottomOffset - topOffset}px`;
+    wrapper.scrollTop = topOffset;
+}
+
 function renderSchedule(schedule) {
     const grid = document.getElementById("schedule-grid");
     const empty = document.getElementById("schedule-empty");
@@ -255,10 +289,18 @@ function renderSchedule(schedule) {
     for (let hour = 0; hour < 24; hour++) {
         const label = document.createElement("div");
         label.className = "schedule-hour-label";
+        label.dataset.hour = String(hour);
         label.style.gridRowStart = String(hour * 4 + 2);
         label.textContent = `${String(hour).padStart(2, "0")}:00`;
         grid.appendChild(label);
     }
+
+    // Purely decorative background gridlines across all day columns/rows;
+    // see the .schedule-grid-lines CSS for the hour/15-minute line pattern.
+    const gridLines = document.createElement("div");
+    gridLines.className = "schedule-grid-lines";
+    gridLines.setAttribute("aria-hidden", "true");
+    grid.appendChild(gridLines);
 
     schedule.forEach((entry) => {
         const dayIndex = SCHEDULE_DAYS.indexOf(entry.day);
@@ -274,7 +316,17 @@ function renderSchedule(schedule) {
         grid.appendChild(block);
     });
 
-    grid.style.gridTemplateRows = `auto repeat(${SCHEDULE_SLOTS_PER_DAY}, minmax(4px, 1fr))`;
+    // Fixed (not fr-based) row heights so the grid's full height exceeds the
+    // wrapper's visible window below, which is what makes it scrollable.
+    grid.style.gridTemplateRows = `auto repeat(${SCHEDULE_SLOTS_PER_DAY}, var(--schedule-slot-height))`;
+
+    // Only sizes the visible window if this panel happens to already be
+    // visible (e.g. a solve triggered while already on the Schedule tab);
+    // switchTab's "schedule" case covers the more common case of navigating
+    // to the panel afterward.
+    if (document.getElementById("tab-schedule").classList.contains("active")) {
+        applyScheduleVisibleWindow();
+    }
 }
 
 const HELP_TEXT = {

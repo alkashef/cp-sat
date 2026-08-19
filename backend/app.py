@@ -25,6 +25,8 @@ def index():
         "index.html",
         solver_defaults=scheduler.default_parameters(),
         schedule=storage.load()["schedule"],
+        schedule_visible_start_hour=int(os.getenv("SCHEDULE_VISIBLE_START_HOUR", 7)),
+        schedule_visible_end_hour=int(os.getenv("SCHEDULE_VISIBLE_END_HOUR", 24)),
     )
 
 

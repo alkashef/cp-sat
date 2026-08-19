@@ -104,7 +104,9 @@
                 Schedule
                 <button type="button" class="help-icon" aria-label="What is this?" data-help="schedule">?</button>
             </h2>
-            <div id="schedule-grid"></div>
+            <div id="schedule-grid-wrapper">
+                <div id="schedule-grid"></div>
+            </div>
             <p id="schedule-empty" class="empty-state" hidden>No schedule yet. Add tasks and click Solve.</p>
         </section>
     </main>
@@ -112,6 +114,8 @@
     <script>
         window.SOLVER_DEFAULTS = {{ solver_defaults | tojson }};
         window.INITIAL_SCHEDULE = {{ schedule | tojson }};
+        window.SCHEDULE_VISIBLE_START_HOUR = {{ schedule_visible_start_hour | tojson }};
+        window.SCHEDULE_VISIBLE_END_HOUR = {{ schedule_visible_end_hour | tojson }};
     </script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
