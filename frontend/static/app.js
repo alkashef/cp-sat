@@ -328,8 +328,16 @@ function openPopoverFor(icon) {
     popover.className = "help-popover";
     popover.textContent = text;
     popover.setAttribute("role", "tooltip");
+    document.body.appendChild(popover);
 
-    icon.insertAdjacentElement("afterend", popover);
+    // Fixed positioning is relative to the viewport, so anchoring off the
+    // icon's viewport rect (rather than the document) keeps the popover
+    // correctly placed no matter which ancestor (e.g. a table row) it
+    // would otherwise have been clipped or stacked behind.
+    const iconRect = icon.getBoundingClientRect();
+    popover.style.left = `${iconRect.left}px`;
+    popover.style.top = `${iconRect.bottom + 4}px`;
+
     icon.setAttribute("aria-expanded", "true");
     openPopover = { icon, popover };
 }

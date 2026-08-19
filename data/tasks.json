@@ -7,20 +7,40 @@
     {
       "name": "test 2",
       "duration_minutes": 45
+    },
+    {
+      "name": "task 4",
+      "duration_minutes": 120
+    },
+    {
+      "name": "task 3",
+      "duration_minutes": 1005
     }
   ],
   "schedule": [
     {
       "name": "test",
       "day": "Sun",
-      "start_minutes": 45,
-      "end_minutes": 75
+      "start_minutes": 1170,
+      "end_minutes": 1200
     },
     {
       "name": "test 2",
       "day": "Sun",
+      "start_minutes": 1125,
+      "end_minutes": 1170
+    },
+    {
+      "name": "task 4",
+      "day": "Sun",
+      "start_minutes": 1005,
+      "end_minutes": 1125
+    },
+    {
+      "name": "task 3",
+      "day": "Sun",
       "start_minutes": 0,
-      "end_minutes": 45
+      "end_minutes": 1005
     }
   ]
 }
