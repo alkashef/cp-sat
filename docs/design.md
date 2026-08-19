@@ -31,7 +31,7 @@ data/tasks.json (tasks + last solved schedule)
 ```text
 cp-sat/
 ├── config/
-│   └── .env               # FLASK_HOST, FLASK_PORT, TASKS_FILE_PATH
+│   └── .env               # Flask, data path and solver-default settings
 ├── data/
 │   └── tasks.json          # persisted tasks + last solved schedule
 ├── docs/
@@ -45,6 +45,11 @@ cp-sat/
 │   ├── index.html
 │   ├── style.css
 │   └── app.js
+├── tests/                   # pytest suite for backend/
+│   ├── conftest.py
+│   ├── test_storage.py
+│   ├── test_tasks_api.py
+│   └── test_scheduler.py
 ├── scripts/                 # repo maintenance/tooling (not runtime code)
 └── requirements.txt
 ```
@@ -52,6 +57,8 @@ cp-sat/
 - `backend/` holds the Flask app and CP-SAT model code; `frontend/` holds the
   static HTML/CSS/JS files. Flask points its static/template folders at
   `frontend/` so it can still serve both from a single process.
+- `tests/` holds all pytest tests for the backend, kept separate from the
+  application code it exercises.
 
 ## Backend
 
@@ -108,7 +115,17 @@ re-clicking Solve. Shape:
   an error and the stored schedule is left unchanged (REQ-11's infeasible
   case).
 - Slot indices are converted back to day-of-week + minutes-of-day when
-  building the API response.
+  building the API response. Day 0 is `Sun`; `start_minutes` is measured from
+  that day's midnight, and `end_minutes` from the same midnight — so a task
+  running past midnight ends beyond 1440 rather than moving to the next day,
+  and the calendar is responsible for clipping it at the bottom of its column.
+
+`scheduler.py`'s entry point is `solve(tasks, parameters=None)`, where `tasks`
+is the stored task list and `parameters` optionally overrides individual solver
+parameters (the Solver tab's values, forwarded by `POST /solve`). It returns the
+same `{"schedule": [...]}` / `{"error": "..."}` shape the endpoint returns, so
+an unschedulable task list is an ordinary return value rather than an exception.
+An empty task list returns an empty schedule without invoking the solver.
 
 ## Flask API
 
@@ -121,7 +138,7 @@ names to be unique — no separate generated ID is needed.
 | POST   | `/tasks`        | `{name, duration_minutes}`     | created task, or 409 if name exists     |
 | PUT    | `/tasks/<name>` | `{name?, duration_minutes?}`   | updated task                            |
 | DELETE | `/tasks/<name>` | —                              | 204                                     |
-| POST   | `/solve`        | —                              | `{schedule: [...]}` or `{error: "..."}` |
+| POST   | `/solve`        | `{parameters?}`                | `{schedule: [...]}` or `{error: "..."}` |
 
 - `POST /tasks` and `PUT /tasks/<name>` validate that `duration_minutes` is a
   positive multiple of 15 (REQ-3).
@@ -208,13 +225,17 @@ last-active tab persists only for the current page session (not saved to
   type.
 - REQ-18/REQ-19 parameters and their inputs:
 
-  | Parameter             | Input                     | Default |
-  | --------------------- | ------------------------- | ------- |
-  | `num_search_workers`  | number, min 1             | 8       |
-  | `max_time_in_seconds` | number, min 0.1, step 0.1 | 30.0    |
-  | `log_search_progress` | checkbox                  | off     |
-  | `randomize_search`    | checkbox                  | off     |
-  | `relative_gap_limit`  | number, min 0, step 0.01  | 0.0     |
+  | Parameter             | Input                     | Default from `config/.env`         |
+  | --------------------- | ------------------------- | ---------------------------------- |
+  | `num_search_workers`  | number, min 1             | `SOLVER_WORKERS` (8)               |
+  | `max_time_in_seconds` | number, min 0.1, step 0.1 | `SOLVER_MAX_TIME_SECONDS` (10)     |
+  | `log_search_progress` | checkbox                  | `SOLVER_LOG_SEARCH_PROGRESS` (off) |
+  | `randomize_search`    | checkbox                  | `SOLVER_RANDOMIZE_SEARCH` (off)    |
+  | `relative_gap_limit`  | number, min 0, step 0.01  | `SOLVER_GAP_LIMIT` (0.01)          |
+
+  The values in brackets are today's `config/.env` values; `config/.env` is the
+  source of truth, and `scheduler.py` falls back to a parameter's default only
+  for parameters the request does not override.
 
 - Edits update in-memory state in `app.js` only; there is no `PUT` endpoint
   for parameters — they are read by `POST /solve` from the request body
@@ -309,5 +330,19 @@ Per `CLAUDE.md`, all configurable values live in `config/.env`:
 ```text
 FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
-TASKS_FILE_PATH=data/tasks.json
+FLASK_DEBUG=False
+
+DATA_DIR=data
+TASKS_FILE=data/tasks.json
+SCHEDULE_FILE=data/schedule.json
+
+SOLVER_WORKERS=8
+SOLVER_MAX_TIME_SECONDS=10
+SOLVER_LOG_SEARCH_PROGRESS=False
+SOLVER_RANDOMIZE_SEARCH=False
+SOLVER_GAP_LIMIT=0.01
 ```
+
+`scheduler.py` loads `config/.env` itself rather than relying on `app.py`, so
+the solver can be exercised directly from a Python shell with the same defaults
+the app would use.

@@ -17,6 +17,7 @@ end (no framework). See `docs/requirements.md` and `docs/design.md` for details.
 - `backend/` — the Flask app and the CP-SAT model/solver code.
 - `frontend/` — the static HTML/CSS/JS UI, served by Flask.
 - `data/` — persisted application data (the task list and last solved schedule).
+- `tests/` — the pytest suite for `backend/`.
 - `scripts/` — standalone utility scripts for repo maintenance/tooling. These are
   not part of the application's runtime program flow.
 
@@ -77,6 +78,12 @@ All configurable values (paths, solver parameters, ports, etc.) live in
   explicitly asks in that turn.
 - **Model selection.** Let Claude Code pick the appropriate model/agent for each
   task automatically rather than forcing a specific one.
+- **Track milestone status in `docs/plan.md`.** Each milestone heading carries a
+  status tag — `[TODO]`, `[DOING]`, or `[DONE]` — e.g.
+  `## Milestone 2 — Task storage & CRUD API [DOING]`. Update it as work happens:
+  set a milestone to `[DOING]` when starting its first implementation step, and to
+  `[DONE]` once its implementation is finished. Untagged milestones are treated as
+  `[TODO]`.
 
 ## Tech Stack
 

@@ -1,0 +1,11 @@
+{
+  "tasks": [],
+  "schedule": [
+    {
+      "name": "Write report",
+      "day": "Sun",
+      "start_minutes": 0,
+      "end_minutes": 90
+    }
+  ]
+}

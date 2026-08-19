@@ -9,7 +9,20 @@ complexity: Haiku 4.5 for mechanical/low-risk work, Sonnet 5 for standard
 implementation, Opus 5 reserved for the milestone that most needs strong
 reasoning (the CP-SAT model itself).
 
-## Milestone 1 — Project scaffolding & config
+| Milestone | Description | Status | Model | Thinking | Effort |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Project scaffolding & config | DONE | claude-haiku-4-5 | off | low |
+| 2 | Task storage & CRUD API | DONE | claude-sonnet-5 | off | medium |
+| 3 | CP-SAT scheduling core | DONE | claude-opus-5 | on | high |
+| 4 | Solve endpoint & wiring | DONE | claude-sonnet-5 | off | medium |
+| 5 | Tasks tab UI | DONE | claude-sonnet-5 | off | medium |
+| 6 | Solver tab UI | TODO | claude-sonnet-5 | off | medium |
+| 7 | Schedule tab UI | TODO | claude-sonnet-5 | off | medium |
+| 8 | Help icons & in-app learning content | TODO | claude-sonnet-5 | off | low |
+| 9 | Color scheme & visual polish | TODO | claude-haiku-4-5 | off | low |
+| 10 | Source code documentation pass | TODO | claude-sonnet-5 | off | low |
+
+## Milestone 1 — Project scaffolding & config [DONE]
 
 Directory structure, `config/.env`, `requirements.txt`, empty `backend/` and
 `frontend/` packages, Flask app that boots and serves a placeholder page.
@@ -17,14 +30,31 @@ Directory structure, `config/.env`, `requirements.txt`, empty `backend/` and
 - **Covers:** REQ-16, REQ-17 (architecture)
 - **pytest:** none — nothing with logic to test yet.
 - **User tests:**
-  - Run the Flask app; confirm it starts without error and serves a page at
-    `http://<FLASK_HOST>:<FLASK_PORT>/`.
-  - Confirm no config values are hardcoded outside `config/.env`.
+  - Start the app from the repo root with the project's Python:
+
+    ```cmd
+    python backend/app.py
+    ```
+
+    Confirm it starts without a traceback and prints that it's running on
+    `http://<FLASK_HOST>:<FLASK_PORT>/` (values from `config/.env`).
+  - In a browser, visit `http://<FLASK_HOST>:<FLASK_PORT>/` (e.g.
+    `http://127.0.0.1:5000/`) and confirm the placeholder page loads (not a
+    404 or 500).
+  - Confirm no config values are hardcoded outside `config/.env`:
+
+    ```cmd
+    grep -rn "127.0.0.1\|5000" backend/ frontend/
+    ```
+
+    (PowerShell: `Select-String -Path backend\*.py,frontend\* -Pattern "127.0.0.1|5000" -Recurse`)
+    The only hits should be the fallback defaults in `os.getenv(...)` calls,
+    not values used directly.
 - **Model:** claude-haiku-4-5
 - **Thinking mode:** off
 - **Effort level:** low
 
-## Milestone 2 — Task storage & CRUD API
+## Milestone 2 — Task storage & CRUD API [DONE]
 
 `storage.py` (load/save `data/tasks.json`), `POST/GET/PUT/DELETE /tasks`
 routes, name-uniqueness and duration-multiple-of-15 validation.
@@ -39,16 +69,41 @@ routes, name-uniqueness and duration-multiple-of-15 validation.
     delete removes the task; task list persists across a simulated restart
     (re-instantiate storage from the same file).
 - **User tests:**
-  - Add a task via the API (or a temporary client), confirm it appears in
-    `GET /tasks`.
-  - Restart the Flask process and confirm the task is still there.
-  - Try adding a duplicate name and a non-15-multiple duration; confirm both
-    are rejected with a clear error.
+  - Start the app (`python backend/app.py`), then in a separate terminal add
+    a task and confirm it's returned and shows up in the list:
+
+    ```cmd
+    curl.exe -X POST http://127.0.0.1:5000/tasks -H "Content-Type: application/json" -d "{\"name\": \"Write report\", \"duration_minutes\": 90}"
+    curl.exe http://127.0.0.1:5000/tasks
+    ```
+
+    (PowerShell equivalent:
+    `Invoke-RestMethod -Uri http://127.0.0.1:5000/tasks -Method Post -ContentType "application/json" -Body '{"name": "Write report", "duration_minutes": 90}'`
+    then `Invoke-RestMethod -Uri http://127.0.0.1:5000/tasks -Method Get`.)
+    Expect `201` with the task echoed back, then a `GET` showing
+    `[{"duration_minutes":90,"name":"Write report"}]`.
+  - Stop the Flask process (Ctrl+C) and restart it (`python backend/app.py`),
+    then re-run the `GET /tasks` command above; confirm the same task is
+    still returned (proves persistence to `data/tasks.json`, not just
+    in-memory state).
+  - Try adding a duplicate name — re-run the same `POST` command again and
+    confirm it now returns `409`:
+
+    ```cmd
+    curl.exe -i -X POST http://127.0.0.1:5000/tasks -H "Content-Type: application/json" -d "{\"name\": \"Write report\", \"duration_minutes\": 30}"
+    ```
+
+    (the `-i` flag prints the status line so you can see `HTTP/1.1 409`.)
+  - Try a non-15-multiple duration and confirm it returns `400`:
+
+    ```cmd
+    curl.exe -i -X POST http://127.0.0.1:5000/tasks -H "Content-Type: application/json" -d "{\"name\": \"Bad Duration Task\", \"duration_minutes\": 20}"
+    ```
 - **Model:** claude-sonnet-5
 - **Thinking mode:** off
 - **Effort level:** medium
 
-## Milestone 3 — CP-SAT scheduling core
+## Milestone 3 — CP-SAT scheduling core [DONE]
 
 `scheduler.py`: builds the CP-SAT model (interval variables, `AddNoOverlap`,
 makespan objective), runs it with configurable parameters, and converts the
@@ -64,17 +119,32 @@ worth extra reasoning budget.
     each solver parameter (workers, time limit, logging, randomization, gap
     limit) doesn't change correctness of a feasible solve.
 - **User tests:**
-  - Add a handful of tasks and confirm the returned schedule has no
-    overlapping tasks and looks reasonably packed (little idle time).
-  - Add tasks totaling more than a week's worth of minutes; confirm a clean
-    "no feasible schedule" result rather than a crash.
-  - Change `max_time_in_seconds` to a very small value and confirm the solver
-    still returns a result (possibly suboptimal) rather than hanging.
+  - `scheduler.py` has no route of its own yet (that's Milestone 4), so
+    exercise its entry point, `scheduler.solve(tasks, parameters=None)`,
+    directly from a Python shell:
+
+    ```cmd
+    python -c "import sys; sys.path.insert(0, 'backend'); import scheduler; print(scheduler.solve([{'name': 'A', 'duration_minutes': 60}, {'name': 'B', 'duration_minutes': 90}]))"
+    ```
+
+    Inspect the printed schedule and confirm no two tasks' time ranges
+    overlap and idle gaps look small.
+  - Add tasks totaling more than a week's worth of minutes (>10080) with the
+    same approach and confirm it returns the infeasible/error result rather
+    than raising an exception, e.g.:
+
+    ```cmd
+    python -c "import sys; sys.path.insert(0, 'backend'); import scheduler; print(scheduler.solve([{'name': 'Huge', 'duration_minutes': 10095}]))"
+    ```
+  - Set `SOLVER_MAX_TIME_SECONDS` to a very small value (e.g. `1`) in
+    `config/.env`, re-run the first command with a larger task set, and
+    confirm it returns promptly with a (possibly suboptimal) result instead
+    of hanging.
 - **Model:** claude-opus-5
 - **Thinking mode:** on
 - **Effort level:** high
 
-## Milestone 4 — Solve endpoint & wiring
+## Milestone 4 — Solve endpoint & wiring [DONE]
 
 `POST /solve`: reads tasks + parameters, calls `scheduler.py`, persists the
 schedule on success via `storage.py`, returns the error shape on failure.
@@ -86,15 +156,42 @@ schedule on success via `storage.py`, returns the error shape on failure.
     returns an error and leaves the previously stored schedule untouched;
     adding/editing/removing a task does not itself trigger a solve.
 - **User tests:**
-  - Add tasks, click Solve (or call the endpoint), confirm the schedule
-    returned matches what storage now holds on disk.
-  - Confirm editing a task afterward does not change the displayed/stored
-    schedule until Solve is clicked again.
+  - With the app running, add a couple of tasks, then call `POST /solve` and
+    confirm it returns a schedule:
+
+    ```cmd
+    curl.exe -X POST http://127.0.0.1:5000/tasks -H "Content-Type: application/json" -d "{\"name\": \"Write report\", \"duration_minutes\": 90}"
+    curl.exe -X POST http://127.0.0.1:5000/solve
+    ```
+
+    Then confirm it was persisted by reading the file directly:
+
+    ```cmd
+    type data\tasks.json
+    ```
+
+    (PowerShell: `Get-Content data\tasks.json`.) Confirm the `schedule` field
+    in the file matches what `/solve` returned.
+  - Edit the task afterward and confirm the stored/displayed schedule is
+    unchanged until `/solve` is called again:
+
+    ```cmd
+    curl.exe -X PUT "http://127.0.0.1:5000/tasks/Write report" -H "Content-Type: application/json" -d "{\"duration_minutes\": 45}"
+    type data\tasks.json
+    ```
+
+    The `tasks` entry should now show 45 minutes, but the `schedule` field
+    should still reflect the old 90-minute solve until you `POST /solve`
+    again.
+  - Force an infeasible task list (e.g. a single task over 10080 minutes),
+    call `POST /solve`, and confirm it returns an error response while
+    `data/tasks.json`'s `schedule` field still holds the last successful
+    solve, not the failed attempt.
 - **Model:** claude-sonnet-5
 - **Thinking mode:** off
 - **Effort level:** medium
 
-## Milestone 5 — Tasks tab UI
+## Milestone 5 — Tasks tab UI [DONE]
 
 Banner, 3-tab shell, and the Tasks tab: task form, task list with inline
 edit/remove, Solve button with loading/error states.
@@ -103,17 +200,33 @@ edit/remove, Solve button with loading/error states.
   switch on success), REQ-16, REQ-17
 - **pytest:** none — this is frontend JS/HTML/CSS; no pytest coverage.
 - **User tests:**
-  - Add, edit, and remove tasks in the browser; confirm the list updates
-    without a page reload.
-  - Trigger a duplicate-name and an invalid-duration error; confirm inline
-    messages appear (no browser `alert()`).
-  - Click Solve with zero tasks (button should be disabled) and with an
-    infeasible task set (error shown, stays on Tasks tab).
+  - Start the app (`python backend/app.py`) and open
+    `http://127.0.0.1:5000/` in a browser.
+  - Add a task: fill in the name field (e.g. `Write report`) and duration
+    field (e.g. `90`), click Add. Confirm it appears in the task list
+    immediately, with no full-page reload (watch the browser tab's loading
+    spinner — it shouldn't flash).
+  - Edit that task inline: click its edit control, change the duration to
+    `45`, save. Confirm the list updates in place.
+  - Remove the task: click its remove control. Confirm it disappears from
+    the list.
+  - Trigger a duplicate-name error: add a task named `Write report`, then
+    add another task with the same name. Confirm an inline error message
+    appears near the form — open the browser dev tools Console (F12) first
+    and confirm no `alert()` dialog fires and no uncaught JS errors are
+    logged.
+  - Trigger an invalid-duration error: try adding a task with duration `20`
+    (not a multiple of 15). Confirm an inline error appears the same way.
+  - With zero tasks in the list, confirm the Solve button is disabled
+    (greyed out / unclickable).
+  - Add a task with an infeasible duration (e.g. `10800` minutes, over a
+    week), click Solve, and confirm an inline error is shown and the UI
+    stays on the Tasks tab (does not switch to the Schedule tab).
 - **Model:** claude-sonnet-5
 - **Thinking mode:** off
 - **Effort level:** medium
 
-## Milestone 6 — Solver tab UI
+## Milestone 6 — Solver tab UI [TODO]
 
 Parameter table (name, description, help icon, editable input) wired to the
 in-memory state consumed by the Solve button.
@@ -121,15 +234,24 @@ in-memory state consumed by the Solve button.
 - **Covers:** REQ-18, REQ-19, REQ-20
 - **pytest:** none — frontend only.
 - **User tests:**
-  - Change each parameter's value, click Solve, confirm the new values are
-    sent (e.g. via browser dev tools network tab).
-  - Use "Reset to defaults" and confirm all fields return to their default
-    values without touching saved tasks/schedule.
+  - With the app running and at least one task added, open the browser dev
+    tools (F12) and switch to the Network tab. Go to the Solver tab in the
+    app, change each parameter's input value (e.g. set `workers` to `2`,
+    `max_time_in_seconds` to `5`), then switch back to Tasks and click Solve.
+  - In the Network tab, click the `solve` request and inspect its request
+    payload (Payload/Body panel). Confirm the changed parameter values are
+    present in the JSON body, not the `config/.env` defaults.
+  - Click "Reset to defaults" on the Solver tab. Confirm every input field
+    reverts to the default shown in `config/.env`
+    (`SOLVER_WORKERS`, `SOLVER_MAX_TIME_SECONDS`, etc.).
+  - After resetting, switch to the Tasks tab and the Schedule tab and confirm
+    both are unaffected — resetting solver parameters must not clear or
+    alter saved tasks or the last persisted schedule shown there.
 - **Model:** claude-sonnet-5
 - **Thinking mode:** off
 - **Effort level:** medium
 
-## Milestone 7 — Schedule tab UI
+## Milestone 7 — Schedule tab UI [TODO]
 
 CSS Grid weekly calendar rendering the solved schedule, including the
 page-load-from-persisted-schedule path.
@@ -137,17 +259,24 @@ page-load-from-persisted-schedule path.
 - **Covers:** REQ-14, REQ-15
 - **pytest:** none — frontend only.
 - **User tests:**
-  - After a successful solve, confirm each task appears as a correctly
-    positioned, correctly sized, labeled block with no visual overlap.
-  - Reload the page without clicking Solve; confirm the last persisted
-    schedule still renders.
-  - Resize the browser window and confirm the grid stays usable (no
-    horizontal page scroll, labels truncate rather than overflow).
+  - With the app running, add two or three tasks with distinct durations
+    (e.g. `Write report` 90 min, `Team sync` 30 min), click Solve, and let
+    the UI switch to the Schedule tab.
+  - Visually confirm each task renders as a labeled block positioned at its
+    solved day/time, sized proportionally to its duration, with no block
+    visually overlapping another.
+  - Reload the browser page (F5) without clicking Solve again. Confirm the
+    same schedule still renders on the Schedule tab, unchanged (it's read
+    from the persisted schedule, not recomputed).
+  - Resize the browser window from full width down to a narrow width (e.g.
+    drag it to ~400px, or use dev tools' device toolbar, Ctrl+Shift+M).
+    Confirm the page never grows a horizontal scrollbar and task labels
+    truncate (e.g. with an ellipsis) rather than overflowing their block.
 - **Model:** claude-sonnet-5
 - **Thinking mode:** off
 - **Effort level:** medium
 
-## Milestone 8 — Help icons & in-app learning content
+## Milestone 8 — Help icons & in-app learning content [TODO]
 
 Help icon component, popover behavior, and the explanation text for every
 solver parameter and the Schedule tab's no-overlap/idle-time concepts.
@@ -155,17 +284,23 @@ solver parameter and the Schedule tab's no-overlap/idle-time concepts.
 - **Covers:** REQ-21, REQ-22
 - **pytest:** none — frontend only.
 - **User tests:**
-  - Activate every help icon (mouse and keyboard) and confirm the popover
-    text matches the content specified in `docs/design.md`.
-  - Confirm only one popover is open at a time, and that clicking elsewhere
-    or pressing `Escape` closes it.
+  - With the app running, go through each solver parameter's help icon and
+    the Schedule tab's help icon(s) one at a time:
+    - Mouse: click (or hover, per the implemented trigger) the icon.
+    - Keyboard: `Tab` to focus the icon, then press `Enter` or `Space`.
+    In both cases, confirm the popover text appears and matches the
+    corresponding explanation in `docs/design.md`.
+  - With one popover open, activate a second help icon and confirm the
+    first popover closes (only one open at a time).
+  - With a popover open, click elsewhere on the page and confirm it closes;
+    reopen it and press `Escape` and confirm it closes that way too.
 - **Model:** claude-sonnet-5 (mechanically simple, but writing accurate
   beginner-level CP-SAT explanations benefits from a stronger model than
   Haiku)
 - **Thinking mode:** off
 - **Effort level:** low
 
-## Milestone 9 — Color scheme & visual polish
+## Milestone 9 — Color scheme & visual polish [TODO]
 
 Apply the Signal palette tokens across `style.css`; final pass on spacing,
 empty states, and responsive behavior.
@@ -173,15 +308,21 @@ empty states, and responsive behavior.
 - **Covers:** (visual design, not requirement-tied)
 - **pytest:** none — frontend only.
 - **User tests:**
-  - Visually compare the running app against the Signal palette swatch in
-    `docs/design.md` for each surface (banner, tabs, panels, buttons).
-  - Click through all empty states (no tasks, no schedule yet) and confirm
-    they render sensibly rather than blank/broken.
+  - With the app running, open the browser dev tools (F12), use the color
+    picker/inspector on each surface (banner, tab bar, panels, buttons,
+    schedule blocks), and compare the sampled color values against the
+    Signal palette swatch in `docs/design.md`.
+  - Delete all tasks (via the UI or by clearing `data/tasks.json`'s `tasks`
+    array and restarting the app) and load the Tasks tab; confirm the empty
+    state renders a sensible message/illustration rather than a blank area.
+  - With no schedule yet solved (`schedule` is `null` in `data/tasks.json`),
+    load the Schedule tab; confirm it also shows a sensible empty state
+    rather than a blank or broken grid.
 - **Model:** claude-haiku-4-5
 - **Thinking mode:** off
 - **Effort level:** low
 
-## Milestone 10 — Source code documentation pass
+## Milestone 10 — Source code documentation pass [TODO]
 
 Docstrings on every module/class/function in `scheduler.py`, and CP-SAT
 concept comments throughout, per CLAUDE.md's "Source Code Documentation
@@ -191,10 +332,21 @@ whatever changed during implementation.
 - **Covers:** (documentation quality, not requirement-tied)
 - **pytest:** none.
 - **User tests:**
-  - Read through `scheduler.py` as if new to OR-Tools; confirm each CP-SAT
-    concept (interval variables, `AddNoOverlap`, the objective, parameters,
-    solve status) is explained where it's used.
-  - Confirm `README.md` and `docs/` accurately describe the app as built.
+  - Open [scheduler.py](backend/scheduler.py) and read it top to bottom as
+    if new to OR-Tools. For each of these concepts, confirm there's a
+    comment at its point of use explaining what it is and why it's needed
+    (not just what the line does): interval variables, `AddNoOverlap`, the
+    objective/`Minimize` call, solver parameters, and the solve status
+    check.
+  - Diff the current state of `README.md`, `docs/requirements.md`, and
+    `docs/design.md` against the app as actually built:
+
+    ```cmd
+    git diff --stat README.md docs/
+    ```
+
+    Read each changed section and confirm it still matches the shipped
+    behavior (routes, config keys, directory layout, UI flow).
 - **Model:** claude-sonnet-5 (accurate CP-SAT explanations warrant more than
   Haiku)
 - **Thinking mode:** off

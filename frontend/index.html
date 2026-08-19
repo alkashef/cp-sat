@@ -4,10 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timetable Solver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Timetable Solver</h1>
-    <p>Welcome to the Timetable Solver. This app demonstrates Google OR-Tools' CP-SAT constraint solver by scheduling tasks on a weekly calendar.</p>
-    <p>Coming soon...</p>
+    <header class="banner">
+        <h1>Timetable Solver</h1>
+        <p class="subtitle">Using Google's OR-Tools</p>
+    </header>
+
+    <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="tasks" role="tab" aria-selected="true">Tasks</button>
+        <button class="tab" data-tab="solver" role="tab" aria-selected="false">Solver</button>
+        <button class="tab" data-tab="schedule" role="tab" aria-selected="false">Schedule</button>
+    </nav>
+
+    <main>
+        <section id="tab-tasks" class="tab-panel active">
+            <form id="task-form">
+                <input type="text" id="task-name" placeholder="Task name" required>
+                <input type="number" id="task-duration" placeholder="Duration (minutes)" step="15" min="15" required>
+                <button type="submit">Add</button>
+            </form>
+            <p id="task-form-error" class="error-message" hidden></p>
+
+            <ul id="task-list"></ul>
+            <p id="task-list-empty" class="empty-state" hidden>No tasks yet.</p>
+
+            <div class="solve-row">
+                <button id="solve-button" disabled>Solve</button>
+                <p id="solve-error" class="error-message" hidden></p>
+            </div>
+        </section>
+
+        <section id="tab-solver" class="tab-panel">
+            <p>Solver parameters coming soon.</p>
+        </section>
+
+        <section id="tab-schedule" class="tab-panel">
+            <p>Schedule coming soon.</p>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
