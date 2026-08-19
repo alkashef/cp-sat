@@ -18,9 +18,9 @@ reasoning (the CP-SAT model itself).
 | 5 | Tasks tab UI | DONE | claude-sonnet-5 | off | medium |
 | 6 | Solver tab UI | DONE | claude-sonnet-5 | off | medium |
 | 7 | Schedule tab UI | DONE | claude-sonnet-5 | off | medium |
-| 8 | Help icons & in-app learning content | TODO | claude-sonnet-5 | off | low |
-| 9 | Color scheme & visual polish | TODO | claude-haiku-4-5 | off | low |
-| 10 | Source code documentation pass | TODO | claude-sonnet-5 | off | low |
+| 8 | Help icons & in-app learning content | DONE | claude-sonnet-5 | off | low |
+| 9 | Color scheme & visual polish | DONE | claude-haiku-4-5 | off | low |
+| 10 | Source code documentation pass | DONE | claude-sonnet-5 | off | low |
 
 ## Milestone 1 — Project scaffolding & config [DONE]
 
@@ -276,7 +276,7 @@ page-load-from-persisted-schedule path.
 - **Thinking mode:** off
 - **Effort level:** medium
 
-## Milestone 8 — Help icons & in-app learning content [TODO]
+## Milestone 8 — Help icons & in-app learning content [DONE]
 
 Help icon component, popover behavior, and the explanation text for every
 solver parameter and the Schedule tab's no-overlap/idle-time concepts.
@@ -300,7 +300,7 @@ solver parameter and the Schedule tab's no-overlap/idle-time concepts.
 - **Thinking mode:** off
 - **Effort level:** low
 
-## Milestone 9 — Color scheme & visual polish [TODO]
+## Milestone 9 — Color scheme & visual polish [DONE]
 
 Apply the Signal palette tokens across `style.css`; final pass on spacing,
 empty states, and responsive behavior.
@@ -322,7 +322,7 @@ empty states, and responsive behavior.
 - **Thinking mode:** off
 - **Effort level:** low
 
-## Milestone 10 — Source code documentation pass [TODO]
+## Milestone 10 — Source code documentation pass [DONE]
 
 Docstrings on every module/class/function in `scheduler.py`, and CP-SAT
 concept comments throughout, per CLAUDE.md's "Source Code Documentation

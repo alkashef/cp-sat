@@ -43,8 +43,9 @@ cp-sat/
 │   └── storage.py            # reads/writes data/tasks.json
 ├── frontend/
 │   ├── index.html
-│   ├── style.css
-│   └── app.js
+│   └── static/
+│       ├── style.css
+│       └── app.js
 ├── tests/                   # pytest suite for backend/
 │   ├── conftest.py
 │   ├── test_storage.py
@@ -73,7 +74,7 @@ cp-sat/
   each CP-SAT concept it uses (interval variables, `AddNoOverlap`, the
   objective, solver parameters, solve status) gets a comment explaining the
   concept itself for a first-time OR-Tools reader — see CLAUDE.md's
-  "Educational Documentation" section. `app.js`'s calendar/tab logic and
+  "Source Code Documentation Rules" section. `app.js`'s calendar/tab logic and
   `app.py`'s routes get ordinary docstrings/comments; the concept-level
   explanations belong to `scheduler.py`, where CP-SAT is actually used, and
   to the in-app help text described under Help Icons below.
@@ -148,8 +149,8 @@ names to be unique — no separate generated ID is needed.
 
 ## Frontend
 
-- Three flat files: `frontend/index.html`, `frontend/style.css`,
-  `frontend/app.js`. No build step, no frontend framework.
+- Three flat files: `frontend/index.html`, `frontend/static/style.css`,
+  `frontend/static/app.js`. No build step, no frontend framework.
 - `app.js` handles: fetching/rendering the task list, the add/edit/remove
   form interactions, calling `POST /solve`, and rendering the calendar.
 - The weekly calendar is a CSS Grid (7 day columns x 96 rows, one row per

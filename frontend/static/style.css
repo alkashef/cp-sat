@@ -1,41 +1,70 @@
+:root {
+    --bg: #0C2135;
+    --surface: #173A56;
+    --surface-alt: #123049;
+    --line: #25405A;
+    --ink: #EAF4FB;
+    --ink-muted: #7FA8C2;
+    --accent: #3EC6FF;
+    --accent-ink: #04202F;
+}
+
 body {
     font-family: sans-serif;
     margin: 0;
     padding: 0;
+    background-color: var(--bg);
+    color: var(--ink);
 }
 
 .banner {
     padding: 1rem;
+    background-color: var(--bg);
+    border-bottom: 1px solid var(--line);
 }
 
 .banner h1 {
     margin: 0;
+    font-size: 1.75rem;
 }
 
 .subtitle {
-    margin: 0;
+    margin: 0.25rem 0 0 0;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
 }
 
 .tabs {
     display: flex;
-    border-bottom: 1px solid #ccc;
+    background-color: var(--surface);
+    border-bottom: 1px solid var(--line);
 }
 
 .tab {
     padding: 0.75rem 1.5rem;
     border: none;
     background: none;
+    color: var(--ink-muted);
     cursor: pointer;
     font-size: 1rem;
+    transition: color 0.2s;
+}
+
+.tab:hover {
+    color: var(--ink);
 }
 
 .tab.active {
+    color: var(--accent);
     font-weight: bold;
-    border-bottom: 2px solid #3EC6FF;
+    border-bottom: 2px solid var(--accent);
+    position: relative;
+    bottom: -1px;
 }
 
 main {
     padding: 1rem;
+    background-color: var(--bg);
 }
 
 .tab-panel {
@@ -49,33 +78,91 @@ main {
 #task-form {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+}
+
+#task-form input {
+    padding: 0.5rem;
+    background-color: var(--surface-alt);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+
+#task-form button {
+    padding: 0.5rem 1rem;
+    background-color: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: opacity 0.2s;
+}
+
+#task-form button:hover:not(:disabled) {
+    opacity: 0.85;
 }
 
 #task-list {
     list-style: none;
     padding: 0;
+    margin: 0;
 }
 
 #task-list li {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #eee;
+    padding: 0.75rem;
+    background-color: var(--surface-alt);
+    border-bottom: 1px solid var(--line);
+    border-radius: 3px;
+    margin-bottom: 0.5rem;
 }
 
 #task-list li .task-name {
     flex: 1;
+    font-weight: 500;
+}
+
+#task-list li .task-duration {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+}
+
+#task-list button {
+    padding: 0.35rem 0.75rem;
+    background-color: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+}
+
+#task-list button:hover {
+    background-color: var(--line);
 }
 
 .error-message {
-    color: #c0392b;
+    color: #FF6B6B;
     margin: 0.5rem 0;
+    padding: 0.5rem;
+    background-color: rgba(255, 107, 107, 0.1);
+    border-left: 2px solid #FF6B6B;
+    border-radius: 2px;
 }
 
 .empty-state {
-    color: #777;
+    color: var(--ink-muted);
+    padding: 2rem;
+    text-align: center;
+    font-size: 1.1rem;
 }
 
 .solve-row {
@@ -83,6 +170,28 @@ main {
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex-wrap: wrap;
+}
+
+#solve-button {
+    padding: 0.6rem 1.5rem;
+    background-color: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: opacity 0.2s;
+}
+
+#solve-button:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+#solve-error {
+    flex: 1;
+    min-width: 200px;
 }
 
 button:disabled {
@@ -94,17 +203,59 @@ button:disabled {
     border-collapse: collapse;
     width: 100%;
     margin-bottom: 1rem;
+    background-color: var(--surface-alt);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
 }
 
-#solver-params th,
-#solver-params td {
+#solver-params th {
+    background-color: var(--surface);
+    color: var(--accent);
+    padding: 0.75rem;
     text-align: left;
-    padding: 0.5rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--line);
+    font-weight: bold;
 }
 
-#solver-params input[type="number"] {
-    width: 6rem;
+#solver-params td {
+    color: var(--ink);
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+#solver-params tr:last-child td {
+    border-bottom: none;
+}
+
+#solver-params input[type="number"],
+#solver-params input[type="text"] {
+    padding: 0.4rem;
+    background-color: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#solver-params input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+#solver-reset {
+    padding: 0.5rem 1rem;
+    background-color: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#solver-reset:hover {
+    background-color: var(--line);
 }
 
 .help-icon {
@@ -113,10 +264,39 @@ button:disabled {
     height: 1.25rem;
     padding: 0;
     line-height: 1;
-    border: 1px solid #ccc;
-    background: none;
+    border: 1px solid var(--accent);
+    background-color: var(--surface);
+    color: var(--accent);
     cursor: pointer;
     margin-left: 0.25rem;
+    position: relative;
+    transition: background-color 0.2s;
+    font-weight: bold;
+}
+
+.help-icon:hover {
+    background-color: var(--line);
+}
+
+.help-popover {
+    position: absolute;
+    z-index: 10;
+    top: 100%;
+    left: 0;
+    margin-top: 0.4rem;
+    width: 16rem;
+    max-width: 60vw;
+    padding: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid var(--accent);
+    background-color: var(--surface);
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: normal;
+    line-height: 1.5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    white-space: normal;
+    text-align: left;
 }
 
 #tab-schedule h2 {
@@ -128,41 +308,48 @@ button:disabled {
 #schedule-grid {
     display: grid;
     grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr));
-    border-left: 1px solid #eee;
-    border-top: 1px solid #eee;
+    border-left: 1px solid var(--line);
+    border-top: 1px solid var(--line);
     max-width: 100%;
-    overflow: hidden;
+    overflow-x: auto;
+    background-color: var(--surface-alt);
+    border-radius: 3px;
 }
 
 .schedule-day-header {
     grid-row: 1;
     text-align: center;
     font-weight: bold;
-    padding: 0.25rem;
-    border-right: 1px solid #eee;
-    border-bottom: 1px solid #eee;
+    color: var(--accent);
+    padding: 0.5rem;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background-color: var(--surface);
 }
 
 .schedule-hour-label {
     grid-column: 1;
     grid-row-end: span 4;
     font-size: 0.7rem;
-    color: #777;
+    color: var(--ink-muted);
     padding-right: 0.25rem;
     text-align: right;
-    border-right: 1px solid #eee;
-    border-bottom: 1px solid #eee;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background-color: var(--surface);
 }
 
 .schedule-block {
-    background: #3EC6FF;
-    color: #04202F;
+    background: var(--accent);
+    color: var(--accent-ink);
     border-radius: 3px;
-    margin: 1px 2px;
-    padding: 0.15rem 0.35rem;
+    margin: 2px;
+    padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }

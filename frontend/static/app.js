@@ -277,6 +277,87 @@ function renderSchedule(schedule) {
     grid.style.gridTemplateRows = `auto repeat(${SCHEDULE_SLOTS_PER_DAY}, minmax(4px, 1fr))`;
 }
 
+const HELP_TEXT = {
+    num_search_workers:
+        "CP-SAT can search for solutions on multiple threads at once " +
+        "(\"parallel search\"). More workers can find a solution faster, " +
+        "but use more CPU. This controls how many threads the solver uses " +
+        "for your next Solve.",
+    max_time_in_seconds:
+        "The solver stops and returns its best answer so far once this " +
+        "many seconds pass, even if it hasn't proven that answer is " +
+        "optimal. Raising this gives CP-SAT more time to search; lowering " +
+        "it returns a result faster, possibly a worse one.",
+    log_search_progress:
+        "When on, the solver prints its internal search log — bounds it " +
+        "has proven and branches it has explored — to the server console " +
+        "so you can watch it work. It has no effect on the schedule " +
+        "itself.",
+    randomize_search:
+        "Shuffles the order CP-SAT explores possibilities internally. On " +
+        "hard problems this can change how quickly a solution is found; " +
+        "it does not change what counts as a valid schedule.",
+    relative_gap_limit:
+        "Lets the solver stop early once its best answer is within this " +
+        "fraction of the theoretical best possible answer, trading " +
+        "proof of optimality for speed. For example, 0.01 means \"stop " +
+        "once within 1% of optimal.\"",
+    schedule:
+        "Each task becomes a CP-SAT \"interval variable\" spanning its " +
+        "start and end time. A no-overlap constraint tells the solver no " +
+        "two intervals may share time. The solver then searches for the " +
+        "arrangement that finishes every task as early as possible, which " +
+        "minimizes the idle gaps between tasks across the week.",
+};
+
+let openPopover = null;
+
+function closePopover() {
+    if (!openPopover) return;
+    openPopover.popover.remove();
+    openPopover.icon.setAttribute("aria-expanded", "false");
+    openPopover = null;
+}
+
+function openPopoverFor(icon) {
+    const key = icon.dataset.help;
+    const text = HELP_TEXT[key];
+    if (!text) return;
+
+    const popover = document.createElement("div");
+    popover.className = "help-popover";
+    popover.textContent = text;
+    popover.setAttribute("role", "tooltip");
+
+    icon.insertAdjacentElement("afterend", popover);
+    icon.setAttribute("aria-expanded", "true");
+    openPopover = { icon, popover };
+}
+
+function toggleHelpIcon(icon) {
+    const reopening = !openPopover || openPopover.icon !== icon;
+    closePopover();
+    if (reopening) openPopoverFor(icon);
+}
+
+document.querySelectorAll(".help-icon").forEach((icon) => {
+    icon.setAttribute("aria-expanded", "false");
+    icon.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleHelpIcon(icon);
+    });
+});
+
+document.addEventListener("click", (event) => {
+    if (!openPopover) return;
+    if (event.target === openPopover.icon || openPopover.popover.contains(event.target)) return;
+    closePopover();
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && openPopover) closePopover();
+});
+
 renderSolverParams();
 renderSchedule(window.INITIAL_SCHEDULE);
 loadTasks();
