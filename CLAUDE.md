@@ -88,6 +88,13 @@ All configurable values (paths, solver parameters, ports, etc.) live in
   set a milestone to `[DOING]` when starting its first implementation step, and to
   `[DONE]` once its implementation is finished. Untagged milestones are treated as
   `[TODO]`.
+- **New feature workflow.** When implementing a new feature, update the docs
+  before writing code, in this order:
+  1. Add the feature to `docs/requirements.md`.
+  2. Update `docs/design.md` to reflect it.
+  3. Update `docs/plan.md` with the corresponding milestone/steps.
+
+  Then execute the plan.
 
 ## Tech Stack
 
