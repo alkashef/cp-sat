@@ -203,7 +203,7 @@ button:disabled {
     cursor: not-allowed;
 }
 
-#solver-params {
+.spec-table {
     border-collapse: collapse;
     width: 100%;
     margin-bottom: 1rem;
@@ -213,7 +213,7 @@ button:disabled {
     overflow: hidden;
 }
 
-#solver-params th {
+.spec-table th {
     background-color: var(--surface);
     color: var(--accent-2);
     padding: 0.75rem;
@@ -222,13 +222,13 @@ button:disabled {
     font-weight: bold;
 }
 
-#solver-params td {
+.spec-table td {
     color: var(--ink);
     padding: 0.75rem;
     border-bottom: 1px solid var(--line);
 }
 
-#solver-params tr:last-child td {
+.spec-table tr:last-child td {
     border-bottom: none;
 }
 
@@ -304,6 +304,59 @@ button:disabled {
     text-align: left;
 }
 
+#model h3 {
+    color: var(--accent-2);
+    font-size: 1rem;
+    margin: 1rem 0 0.5rem 0;
+}
+
+.model-domain {
+    font-family: monospace;
+    color: var(--ink-muted);
+}
+
+#model-constraints {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+}
+
+#model-constraints li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    background-color: var(--surface-alt);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    margin-bottom: 0.5rem;
+}
+
+.model-constraint-variables {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+}
+
+#model-raw summary {
+    cursor: pointer;
+    color: var(--accent);
+    padding: 0.5rem 0;
+    font-weight: bold;
+}
+
+#model-raw pre {
+    margin: 0;
+    padding: 0.75rem;
+    max-height: 20rem;
+    overflow: auto;
+    background-color: var(--surface-alt);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+}
+
+#model h2,
 #tab-schedule h2 {
     display: flex;
     align-items: center;

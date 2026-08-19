@@ -1,4 +1,4 @@
-// Tab switching, task list management, and the Solve action.
+// Tab switching, task list management, the Solve action, and the model panel.
 
 let solverParameters = { ...window.SOLVER_DEFAULTS };
 
@@ -17,6 +17,9 @@ function switchTab(name) {
     // zero size. So this can only run now, after the panel above goes visible,
     // not back when renderSchedule first populated the grid.
     if (name === "schedule") applyScheduleVisibleWindow();
+    // The model is built from the task list on every visit rather than cached,
+    // so it always reflects tasks edited on the Tasks tab since the last visit.
+    if (name === "solver") fetchModel().then(renderModel);
 }
 
 document.querySelectorAll(".tab").forEach((el) => {
@@ -237,6 +240,74 @@ document.getElementById("solver-reset").addEventListener("click", () => {
     renderSolverParams();
 });
 
+async function fetchModel() {
+    const response = await fetch("/model");
+    return response.json();
+}
+
+function modelVariableRow(variable) {
+    const row = document.createElement("tr");
+
+    const nameCell = document.createElement("td");
+    const name = document.createElement("code");
+    name.textContent = variable.name;
+    nameCell.appendChild(name);
+
+    const kindCell = document.createElement("td");
+    kindCell.textContent = variable.kind;
+
+    const domainCell = document.createElement("td");
+    domainCell.className = "model-domain";
+    domainCell.textContent = variable.domain;
+
+    row.appendChild(nameCell);
+    row.appendChild(kindCell);
+    row.appendChild(domainCell);
+    return row;
+}
+
+function modelConstraintItem(constraint) {
+    const item = document.createElement("li");
+
+    const type = document.createElement("code");
+    type.textContent = constraint.type;
+
+    const description = document.createElement("span");
+    description.textContent = constraint.description;
+
+    const variables = document.createElement("span");
+    variables.className = "model-constraint-variables";
+    variables.textContent = constraint.variables.join(", ");
+
+    item.appendChild(type);
+    item.appendChild(description);
+    item.appendChild(variables);
+    return item;
+}
+
+// Fills the Solver tab's Model section from a GET /model response: the
+// variables table, the constraints list, and the raw protobuf dump.
+function renderModel(model) {
+    const body = document.getElementById("model-body");
+    const empty = document.getElementById("model-empty");
+    const rows = document.querySelector("#model-variables tbody");
+    const constraints = document.getElementById("model-constraints");
+
+    const hasModel = model.variables.length !== 0;
+    body.hidden = !hasModel;
+    empty.hidden = hasModel;
+
+    rows.innerHTML = "";
+    constraints.innerHTML = "";
+    if (!hasModel) return;
+
+    model.variables.forEach((variable) => rows.appendChild(modelVariableRow(variable)));
+    model.constraints.forEach((constraint) =>
+        constraints.appendChild(modelConstraintItem(constraint))
+    );
+    document.querySelector("#model-raw pre").textContent = model.raw_proto;
+}
+
 const SCHEDULE_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const SCHEDULE_SLOT_MINUTES = 15;
 const SCHEDULE_SLOTS_PER_DAY = (24 * 60) / SCHEDULE_SLOT_MINUTES;
@@ -363,6 +434,15 @@ const HELP_TEXT = {
         "fraction of the theoretical best possible answer, trading " +
         "proof of optimality for speed. For example, 0.01 means \"stop " +
         "once within 1% of optimal.\"",
+    model:
+        "Before searching, CP-SAT is handed a model: the decision variables " +
+        "it has to assign values to, the domain of values each one may take, " +
+        "and the constraints those values must satisfy. This section shows " +
+        "the model built from your current task list — a start variable per " +
+        "task, whose domain is every slot the task could begin at and still " +
+        "fit inside the week, the interval variable built on top of it, and " +
+        "the makespan. Nothing is solved to show this; the model is only " +
+        "built and read back, so it appears without clicking Solve.",
     schedule:
         "Each task becomes a CP-SAT \"interval variable\" spanning its " +
         "start and end time. A no-overlap constraint tells the solver no " +

@@ -71,6 +71,17 @@ tunable, not hidden behind a fixed configuration.
 - REQ-20: WHEN the user clicks the "Solve" button, the system shall run the
   CP-SAT solver using the currently edited parameter values.
 
+## Model Inspection
+
+- REQ-23: The system shall display, for the current task list, the CP-SAT
+  model's decision variables with their domains, its constraints, and its
+  objective.
+- REQ-24: The system shall display the raw CP-SAT model handed to the solver,
+  in the solver's own text representation.
+- REQ-25: The system shall build the displayed model from the current task
+  list alone, without running the solver and without requiring the user to
+  click "Solve".
+
 ## In-App Learning
 
 - REQ-21: The system shall display a help icon next to each CP-SAT concept

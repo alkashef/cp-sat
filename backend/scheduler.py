@@ -40,7 +40,7 @@ def solve(tasks, parameters=None):
     if not tasks:
         return {"schedule": []}
 
-    model, starts = _build_model(tasks)
+    model, starts, _, _ = _build_model(tasks)
 
     solver = cp_model.CpSolver()
     _apply_parameters(solver, parameters)
@@ -62,15 +62,112 @@ def solve(tasks, parameters=None):
     return {"schedule": schedule}
 
 
+def describe_model(tasks):
+    """Describe the CP-SAT model built for `tasks`, without solving it.
+
+    Returns a JSON-serializable dict holding the model's decision variables
+    and their domains, its constraints, its objective, and CP-SAT's own text
+    dump of the model. The Solver tab renders this so the model handed to the
+    solver is visible from the task list alone, before any solve is run.
+
+    An empty task list has no model to describe, so it returns an empty
+    description rather than building one.
+    """
+    if not tasks:
+        return {"variables": [], "constraints": [], "objective": None, "raw_proto": ""}
+
+    model, starts, intervals, makespan = _build_model(tasks)
+
+    variables = []
+    for task, start, interval in zip(tasks, starts, intervals):
+        duration = _duration_slots(task)
+        # A decision variable's domain is the set of values the solver is
+        # allowed to pick from. A start variable stops at HORIZON_SLOTS minus
+        # the task's own length, which is what keeps the task inside the week.
+        variables.append(
+            {
+                "name": start.Name(),
+                "kind": "IntVar (start slot)",
+                "domain": f"[0, {HORIZON_SLOTS - duration}]",
+            }
+        )
+        # An interval variable has no numeric domain of its own: it is the
+        # (start, size, end) triple built on top of the start variable above,
+        # so the relationship between those three is shown instead of a range.
+        variables.append(
+            {
+                "name": interval.Name(),
+                "kind": "IntervalVar",
+                "domain": f"start + {duration} = end",
+            }
+        )
+    variables.append(
+        {
+            "name": makespan.Name(),
+            "kind": "IntVar (objective)",
+            "domain": f"[0, {HORIZON_SLOTS}]",
+        }
+    )
+
+    task_names = [task["name"] for task in tasks]
+    constraints = [
+        {
+            "type": "AddNoOverlap",
+            "description": (
+                "No two task intervals may cover the same slot, so every task "
+                "lands somewhere on a single shared timeline."
+            ),
+            "variables": task_names,
+        },
+        {
+            "type": "AddMaxEquality",
+            "description": (
+                "makespan is held equal to the largest task end time — the "
+                "moment the last task finishes."
+            ),
+            "variables": [makespan.Name()] + task_names,
+        },
+    ]
+
+    objective = {
+        "type": "Minimize",
+        "expression": makespan.Name(),
+        "description": (
+            "Finish the last task as early as possible. The total work is "
+            "fixed, so pulling the finish time in squeezes the idle gaps "
+            "between tasks."
+        ),
+    }
+
+    # model.Proto() is the protocol buffer CP-SAT is actually handed: every
+    # variable with its domain as a pair of bounds, and every constraint in
+    # the solver's own vocabulary (`interval`, `no_overlap`, `lin_max`, the
+    # objective) instead of the Python calls that created them. Printing it is
+    # the standard way to check what a model really contains, and comparing it
+    # against the friendly summary above shows how a handful of model.Add...()
+    # calls turn into the solver's flat list of variables and constraints.
+    return {
+        "variables": variables,
+        "constraints": constraints,
+        "objective": objective,
+        "raw_proto": str(model.Proto()),
+    }
+
+
 def _build_model(tasks):
-    """Build the CP-SAT model for `tasks`, returning it with each task's start variable."""
+    """Build the CP-SAT model for `tasks`.
+
+    Returns the model along with each task's start and interval variable and
+    the makespan variable, so `solve()` and `describe_model()` can both work
+    from the same construction rather than each building their own model.
+    """
     model = cp_model.CpModel()
     starts = []
     intervals = []
     ends = []
 
     for task in tasks:
-        duration = task["duration_minutes"] // SLOT_MINUTES
+        duration = _duration_slots(task)
         # A decision variable is an unknown the solver has to pick a value for.
         # Here that unknown is the slot the task begins at; its domain stops at
         # HORIZON_SLOTS - duration so the task cannot run past the end of the week.
@@ -101,7 +198,12 @@ def _build_model(tasks):
     model.AddMaxEquality(makespan, ends)
     model.Minimize(makespan)
 
-    return model, starts
+    return model, starts, intervals, makespan
+
+
+def _duration_slots(task):
+    """Return a task's duration as a whole number of 15-minute slots."""
+    return task["duration_minutes"] // SLOT_MINUTES
 
 
 def default_parameters():

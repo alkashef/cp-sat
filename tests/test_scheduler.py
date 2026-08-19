@@ -68,3 +68,57 @@ def test_solver_parameters_do_not_change_correctness(parameters):
 
     assert len(schedule) == len(TASKS)
     _assert_no_overlap(schedule)
+
+
+def test_describe_model_lists_a_start_and_interval_per_task_plus_the_makespan():
+    variables = scheduler.describe_model(TASKS)["variables"]
+
+    names = [variable["name"] for variable in variables]
+    assert len(variables) == 2 * len(TASKS) + 1
+    assert names.count("Write report") == 2
+    assert names[-1] == "makespan"
+
+
+def test_describe_model_start_domains_keep_each_task_inside_the_week():
+    variables = scheduler.describe_model(TASKS)["variables"]
+
+    domains = {
+        variable["name"]: variable["domain"]
+        for variable in variables
+        if variable["kind"].startswith("IntVar")
+    }
+    assert domains["Write report"] == f"[0, {scheduler.HORIZON_SLOTS - 6}]"
+    assert domains["Team sync"] == f"[0, {scheduler.HORIZON_SLOTS - 2}]"
+    assert domains["makespan"] == f"[0, {scheduler.HORIZON_SLOTS}]"
+
+
+def test_describe_model_constraints_reference_every_task():
+    constraints = {c["type"]: c for c in scheduler.describe_model(TASKS)["constraints"]}
+
+    task_names = [task["name"] for task in TASKS]
+    assert constraints["AddNoOverlap"]["variables"] == task_names
+    assert constraints["AddMaxEquality"]["variables"] == ["makespan"] + task_names
+
+
+def test_describe_model_objective_minimizes_the_makespan():
+    objective = scheduler.describe_model(TASKS)["objective"]
+
+    assert objective["type"] == "Minimize"
+    assert objective["expression"] == "makespan"
+
+
+def test_describe_model_raw_proto_holds_the_cp_sat_constraints():
+    raw_proto = scheduler.describe_model(TASKS)["raw_proto"]
+
+    assert "no_overlap" in raw_proto
+    assert "lin_max" in raw_proto
+    assert all(task["name"] in raw_proto for task in TASKS)
+
+
+def test_describe_model_with_no_tasks_returns_an_empty_description():
+    assert scheduler.describe_model([]) == {
+        "variables": [],
+        "constraints": [],
+        "objective": None,
+        "raw_proto": "",
+    }

@@ -21,6 +21,7 @@ reasoning (the CP-SAT model itself).
 | 8 | Help icons & in-app learning content | DONE | claude-sonnet-5 | off | low |
 | 9 | Color scheme & visual polish | DONE | claude-haiku-4-5 | off | low |
 | 10 | Source code documentation pass | DONE | claude-sonnet-5 | off | low |
+| 11 | Model inspection panel | DONE | claude-sonnet-5 | off | medium |
 
 ## Milestone 1 — Project scaffolding & config [DONE]
 
@@ -351,3 +352,46 @@ whatever changed during implementation.
   Haiku)
 - **Thinking mode:** off
 - **Effort level:** low
+
+## Milestone 11 — Model inspection panel [DONE]
+
+`scheduler.describe_model(tasks)` plus `GET /model`, and a "Model" section on
+the Solver tab showing the model's variables and their domains, its
+constraints, and the raw `model.Proto()` dump — built from the current task
+list on every visit to the tab, without solving. `_build_model` now returns
+its interval and makespan variables too, so `solve()` and `describe_model()`
+share one construction. See `docs/model-vis-plan.md` for the full plan.
+
+- **Covers:** REQ-23, REQ-24, REQ-25 (and REQ-21/REQ-22 for the section's
+  help icon)
+- **pytest:**
+  - `test_scheduler.py`: `describe_model()` lists a start and an interval
+    variable per task plus the makespan; start domains stop at
+    `HORIZON_SLOTS - duration`; the constraint entries name every task; the
+    objective minimizes the makespan; the raw proto contains CP-SAT's own
+    `no_overlap`/`lin_max` constraints; an empty task list returns an empty
+    description without building a model.
+  - `test_model_api.py`: `GET /model` returns 200 with the expected variable
+    /constraint/objective/raw-proto shape for a populated task list, an empty
+    description when there are no tasks, and never solves or persists a
+    schedule.
+- **User tests:**
+  - Start the app (`python backend/app.py`), add 2-3 tasks with distinct
+    durations on the Tasks tab, then switch to the Solver tab. Confirm the
+    Model section lists a `start` variable per task with its domain, an
+    `IntervalVar` entry per task, the `makespan`, the `AddNoOverlap` and
+    `AddMaxEquality` constraints in plain English, and the task names and
+    durations you just entered.
+  - Expand "Raw CP-SAT model" and confirm it shows protobuf text listing the
+    same variables and constraints in CP-SAT's native form.
+  - Confirm all of the above appears without ever clicking Solve.
+  - Edit a task's duration on the Tasks tab, return to the Solver tab, and
+    confirm the variable's domain updates to match.
+  - Remove all tasks and revisit the Solver tab; confirm the empty state
+    ("No tasks yet — add tasks to see the model.") shows instead of an empty
+    or broken table.
+  - Click the help icon next to the "Model" heading and confirm the popover
+    explains variables, domains, and constraints.
+- **Model:** claude-sonnet-5
+- **Thinking mode:** off
+- **Effort level:** medium

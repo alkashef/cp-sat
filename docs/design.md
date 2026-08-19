@@ -50,7 +50,9 @@ cp-sat/
 │   ├── conftest.py
 │   ├── test_storage.py
 │   ├── test_tasks_api.py
-│   └── test_scheduler.py
+│   ├── test_scheduler.py
+│   ├── test_solve_api.py
+│   └── test_model_api.py
 ├── scripts/                 # repo maintenance/tooling (not runtime code)
 └── requirements.txt
 ```
@@ -128,6 +130,16 @@ same `{"schedule": [...]}` / `{"error": "..."}` shape the endpoint returns, so
 an unschedulable task list is an ordinary return value rather than an exception.
 An empty task list returns an empty schedule without invoking the solver.
 
+`describe_model(tasks)` is the read-only counterpart behind `GET /model`
+(REQ-23, REQ-24, REQ-25). It builds the same model through the shared
+`_build_model(tasks)` helper — which returns the model along with each task's
+start and interval variable and the makespan variable, so neither caller
+duplicates the construction — and returns a JSON-serializable description of
+it: `variables` (name, kind, domain), `constraints` (CP-SAT method, plain
+description, variables involved), `objective`, and `raw_proto`, the model's
+`str(model.Proto())` dump. It never calls the solver; an empty task list
+returns an empty description without building a model at all.
+
 ## Flask API
 
 Tasks are identified by name in the URL, since REQ-1/REQ-2 already require
@@ -139,6 +151,7 @@ names to be unique — no separate generated ID is needed.
 | POST   | `/tasks`        | `{name, duration_minutes}`     | created task, or 409 if name exists     |
 | PUT    | `/tasks/<name>` | `{name?, duration_minutes?}`   | updated task                            |
 | DELETE | `/tasks/<name>` | —                              | 204                                     |
+| GET    | `/model`        | —                              | model description (see below)           |
 | POST   | `/solve`        | `{parameters?}`                | `{schedule: [...]}` or `{error: "..."}` |
 
 - `POST /tasks` and `PUT /tasks/<name>` validate that `duration_minutes` is a
@@ -146,13 +159,19 @@ names to be unique — no separate generated ID is needed.
 - `POST /solve` runs `scheduler.py` against the current task list, persists
   the result via `storage.py` on success, and never runs implicitly on
   add/edit/remove (REQ-12).
+- `GET /model` returns
+  `{variables: [...], constraints: [...], objective: {...}, raw_proto: "..."}`
+  for the current task list. Like `GET /tasks` it is read-only: it takes no
+  body, reads the task list from `storage.py`, builds the model to describe
+  it, and never solves or persists anything.
 
 ## Frontend
 
 - Three flat files: `frontend/index.html`, `frontend/static/style.css`,
   `frontend/static/app.js`. No build step, no frontend framework.
 - `app.js` handles: fetching/rendering the task list, the add/edit/remove
-  form interactions, calling `POST /solve`, and rendering the calendar.
+  form interactions, calling `POST /solve`, rendering the calendar, and
+  fetching/rendering the Solver tab's model description.
 - The weekly calendar is a CSS Grid (7 day columns x 96 rows, one row per
   15-minute slot) built by `app.js`; each scheduled task is rendered as a
   grid-positioned `<div>` labeled with its name, spanning its start/end slots.
@@ -250,6 +269,38 @@ last-active tab persists only for the current page session (not saved to
 - A "Reset to defaults" link restores the table above without affecting any
   saved tasks or schedule.
 
+#### Model section
+
+Below the parameter table, a "Model" section shows the CP-SAT model built from
+the current task list, so the model itself is visible in the UI and not just
+the settings that control the search (REQ-23, REQ-24, REQ-25).
+
+- Populated from `GET /model` every time the Solver tab becomes active, the
+  same lazy-on-switch pattern the Schedule tab uses. Re-fetching on each visit
+  keeps it in step with tasks edited on the Tasks tab, with no refresh button
+  and no fetch on every task edit. It is independent of solving: the model is
+  built to be read, never solved, so the section fills in without ever
+  clicking Solve.
+- A **Variables** table, styled like the parameter table above (both use the
+  shared `.spec-table` class), with one row per variable: name, kind, and
+  domain. Start variables are `IntVar (start slot)` with the numeric domain
+  `[0, HORIZON_SLOTS - duration]`; interval variables have no numeric domain
+  of their own, so an `IntervalVar` row shows the `start + duration = end`
+  relationship instead; the makespan is `IntVar (objective)` over
+  `[0, HORIZON_SLOTS]`.
+- A **Constraints** list, one card per constraint: the CP-SAT method that
+  created it (`AddNoOverlap`, `AddMaxEquality`), a plain-language description,
+  and the variables it links.
+- A collapsible **Raw CP-SAT model** `<details>` holding the `raw_proto` text
+  — the same model in CP-SAT's own protobuf form, listing every variable and
+  constraint as the solver receives them. The native HTML disclosure widget
+  keeps this free of extra JS state.
+- With zero tasks, the section shows an empty state ("No tasks yet — add tasks
+  to see the model.") in place of the tables, matching `#task-list-empty` and
+  `#schedule-empty`.
+- The objective is not repeated here: the read-only `objective` row at the top
+  of the parameter table already states it.
+
 ### Tab 3: Schedule
 
 - CSS Grid, 7 columns (Sun–Sat) with a header row of day labels, and rows
@@ -279,7 +330,7 @@ last-active tab persists only for the current page session (not saved to
 
 REQ-21/REQ-22 (in-app learning): a small circular "?" icon appears next to
 each CP-SAT concept surfaced in the UI — every parameter row in the Solver
-tab, and once in the Schedule tab header.
+tab, once on its Model section heading, and once in the Schedule tab header.
 
 - Implementation: a `<button class="help-icon" aria-label="What is this?">`
   next to the concept, with the explanation stored as a `data-help`
@@ -296,6 +347,11 @@ tab, and once in the Schedule tab header.
     control how it searches; here that quantity is the makespan, and
     shrinking it packs the week tighter since it's equivalent to shrinking
     the idle gaps between tasks.
+  - `model` (Solver tab) — what a model is before any search happens: the
+    decision variables CP-SAT must assign, the domain of values each may
+    take, and the constraints those values must satisfy; plus what this
+    particular model contains (a start and interval variable per task and the
+    makespan) and the fact that showing it requires no solve.
   - `num_search_workers` — CP-SAT can search for solutions on multiple
     threads at once ("parallel search"); more workers can find a solution
     faster but use more CPU.

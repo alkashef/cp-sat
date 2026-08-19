@@ -87,6 +87,16 @@ def delete_task(name):
     return "", 204
 
 
+@app.route("/model", methods=["GET"])
+def describe_model():
+    """Return a description of the CP-SAT model for the current task list.
+
+    Read-only and independent of solving: it builds the model to inspect it,
+    never runs the solver, and persists nothing.
+    """
+    return jsonify(scheduler.describe_model(storage.load()["tasks"]))
+
+
 @app.route("/solve", methods=["POST"])
 def solve():
     """Solve the current task list and persist the schedule on success.

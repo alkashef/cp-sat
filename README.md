@@ -18,6 +18,9 @@ parameters exposed in the UI rather than hidden.
   with minimal idle time between them.
 - Tune the solver's own parameters (search workers, time limit, gap limit,
   logging, randomization) from the UI before solving.
+- Inspect the CP-SAT model itself — every decision variable with its domain,
+  the constraints linking them, and the raw protobuf model handed to the
+  solver — built from the current task list without running a solve.
 - In-app help icons explain each CP-SAT concept in plain language.
 
 ## Requirements
@@ -61,6 +64,7 @@ cp-sat/
 | POST   | `/tasks`        | `{name, duration_minutes}`     | created task, or 409 if name exists     |
 | PUT    | `/tasks/<name>` | `{name?, duration_minutes?}`   | updated task                            |
 | DELETE | `/tasks/<name>` | —                               | 204                                     |
+| GET    | `/model`        | —                               | variables, constraints, objective, raw proto |
 | POST   | `/solve`        | `{parameters?}`                | `{schedule: [...]}` or `{error: "..."}` |
 
 ## Running Tests

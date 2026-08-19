@@ -37,7 +37,7 @@
         </section>
 
         <section id="tab-solver" class="tab-panel">
-            <table id="solver-params">
+            <table id="solver-params" class="spec-table">
                 <thead>
                     <tr>
                         <th>Parameter</th>
@@ -97,6 +97,35 @@
                 </tbody>
             </table>
             <button type="button" id="solver-reset">Reset to defaults</button>
+
+            <section id="model">
+                <h2>
+                    Model
+                    <button type="button" class="help-icon" aria-label="What is this?" data-help="model">?</button>
+                </h2>
+                <div id="model-body">
+                    <h3>Variables</h3>
+                    <table id="model-variables" class="spec-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Kind</th>
+                                <th>Domain</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <h3>Constraints</h3>
+                    <ul id="model-constraints"></ul>
+
+                    <details id="model-raw">
+                        <summary>Raw CP-SAT model</summary>
+                        <pre></pre>
+                    </details>
+                </div>
+                <p id="model-empty" class="empty-state" hidden>No tasks yet — add tasks to see the model.</p>
+            </section>
         </section>
 
         <section id="tab-schedule" class="tab-panel">
