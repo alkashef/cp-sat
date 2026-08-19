@@ -74,8 +74,12 @@ All configurable values (paths, solver parameters, ports, etc.) live in
 
 ## Working With Claude Code in This Repo
 
-- **Do not commit.** Never run `git commit` (or push) in this repo unless the user
-  explicitly asks in that turn.
+- **Commit and sync after finishing a task.** Once a task's changes are
+  complete, run the pytest suite; if every test passes, commit the change and
+  push it (sync) without waiting for separate confirmation each time. If any
+  test fails, do not commit — fix the failure or report it instead. This
+  doesn't relax the general git safety rules (e.g. force-push or history
+  rewrites still need explicit confirmation).
 - **Model selection.** Let Claude Code pick the appropriate model/agent for each
   task automatically rather than forcing a specific one.
 - **Track milestone status in `docs/plan.md`.** Each milestone heading carries a

@@ -355,12 +355,16 @@ whatever changed during implementation.
 
 ## Milestone 11 — Model inspection panel [DONE]
 
+Before this milestone the Solver tab only exposed the search parameters
+CP-SAT is tuned with, not the model itself — its decision variables, their
+domains, and the constraints linking them stayed invisible, despite the
+app's whole purpose being to teach CP-SAT. This milestone adds
 `scheduler.describe_model(tasks)` plus `GET /model`, and a "Model" section on
-the Solver tab showing the model's variables and their domains, its
-constraints, and the raw `model.Proto()` dump — built from the current task
-list on every visit to the tab, without solving. `_build_model` now returns
-its interval and makespan variables too, so `solve()` and `describe_model()`
-share one construction. See `docs/model-vis-plan.md` for the full plan.
+the Solver tab showing both a friendly plain-language summary (variables,
+domains, constraints) and the raw `model.Proto()` dump, the literal model
+CP-SAT receives — built from the current task list on every visit to the
+tab, without solving. `_build_model` now returns its interval and makespan
+variables too, so `solve()` and `describe_model()` share one construction.
 
 - **Covers:** REQ-23, REQ-24, REQ-25 (and REQ-21/REQ-22 for the section's
   help icon)

@@ -371,24 +371,28 @@ tab, once on its Model section heading, and once in the Schedule tab header.
 
 ## Color Scheme
 
-The app uses the **Signal** palette: a deep navy ground with a single
-electric-cyan accent, chosen for a high-contrast "control room"/instrument
-feel that suits a page whose middle tab exposes solver internals.
+The app uses the **Signal** palette: a deep navy ground with a warm amber
+accent, chosen for a high-contrast "control room"/instrument feel that suits
+a page whose middle tab exposes solver internals.
 
-| Token           | Hex       | Used for                                                  |
-| --------------- | --------- | --------------------------------------------------------- |
-| `--bg`          | `#0C2135` | page/banner background                                    |
-| `--surface`     | `#173A56` | tab bar, panels, table rows                               |
-| `--surface-alt` | `#123049` | cards nested inside panels                                |
-| `--line`        | `#25405A` | borders, dividers, inactive gridlines                     |
-| `--ink`         | `#EAF4FB` | primary text                                              |
-| `--ink-muted`   | `#7FA8C2` | subtitle, labels, secondary text                          |
-| `--accent`      | `#3EC6FF` | active tab underline, Solve button, scheduled task blocks |
-| `--accent-ink`  | `#04202F` | text on top of solid `--accent` fills                     |
+| Token           | Hex                      | Used for                                                         |
+| --------------- | ------------------------ | ---------------------------------------------------------------- |
+| `--bg`          | `#0C2135`                | page/banner background                                           |
+| `--surface`     | `#173A56`                | tab bar, panels, table rows                                      |
+| `--surface-alt` | `#123049`                | cards nested inside panels                                       |
+| `--line`        | `#25405A`                | borders, dividers, gridlines                                     |
+| `--line-faint`  | `rgba(37, 64, 90, 0.35)` | quarter-hour gridlines on the Schedule grid                      |
+| `--ink`         | `#EAF4FB`                | primary text                                                     |
+| `--ink-muted`   | `#7FA8C2`                | subtitle, labels, secondary text                                 |
+| `--accent`      | `#FF8A3D`                | active tab underline, Solve/Add buttons, scheduled task blocks   |
+| `--accent-ink`  | `#241200`                | text on top of solid `--accent` fills                            |
+| `--accent-2`    | `#FFFFFF`                | headings: banner title, table headers, schedule day/hour labels  |
 
 Applied via CSS custom properties in `style.css`; no separate dark/light
 mode is defined, since the palette itself is already dark and this is a
-single-purpose learning tool rather than a general-audience app.
+single-purpose learning tool rather than a general-audience app. Error text
+uses a fixed red (`#FF6B6B`) rather than a palette token, since it's the
+only non-decorative color outside the Signal palette.
 
 ## Libraries
 
@@ -409,15 +413,16 @@ FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
 FLASK_DEBUG=False
 
-DATA_DIR=data
 TASKS_FILE=data/tasks.json
-SCHEDULE_FILE=data/schedule.json
 
 SOLVER_WORKERS=8
 SOLVER_MAX_TIME_SECONDS=10
 SOLVER_LOG_SEARCH_PROGRESS=False
 SOLVER_RANDOMIZE_SEARCH=False
 SOLVER_GAP_LIMIT=0.01
+
+SCHEDULE_VISIBLE_START_HOUR=7
+SCHEDULE_VISIBLE_END_HOUR=24
 ```
 
 `scheduler.py` loads `config/.env` itself rather than relying on `app.py`, so
