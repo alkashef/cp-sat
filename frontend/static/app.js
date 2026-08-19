@@ -1,6 +1,6 @@
 // Tab switching, task list management, and the Solve action.
 
-let solverParameters = null; // populated by the Solver tab (Milestone 6)
+let solverParameters = { ...window.SOLVER_DEFAULTS };
 
 function switchTab(name) {
     document.querySelectorAll(".tab").forEach((el) => {
@@ -193,7 +193,90 @@ document.getElementById("solve-button").addEventListener("click", async () => {
 
     showSolveError(null);
     updateSolveButtonState(document.querySelectorAll("#task-list li").length);
+    renderSchedule(body.schedule);
     switchTab("schedule");
 });
 
+function solverParamInput(param) {
+    return document.querySelector(`#solver-params tr[data-param="${param}"] input`);
+}
+
+function renderSolverParams() {
+    Object.entries(solverParameters).forEach(([param, value]) => {
+        const input = solverParamInput(param);
+        if (!input) return;
+        if (input.type === "checkbox") {
+            input.checked = value;
+        } else {
+            input.value = value;
+        }
+    });
+}
+
+function readSolverParam(param, input) {
+    if (input.type === "checkbox") return input.checked;
+    if (Number.isInteger(parseFloat(input.step))) return parseInt(input.value, 10);
+    return parseFloat(input.value);
+}
+
+document.querySelectorAll("#solver-params input").forEach((input) => {
+    const param = input.closest("tr").dataset.param;
+    input.addEventListener("change", () => {
+        solverParameters[param] = readSolverParam(param, input);
+    });
+});
+
+document.getElementById("solver-reset").addEventListener("click", () => {
+    solverParameters = { ...window.SOLVER_DEFAULTS };
+    renderSolverParams();
+});
+
+const SCHEDULE_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const SCHEDULE_SLOT_MINUTES = 15;
+const SCHEDULE_SLOTS_PER_DAY = (24 * 60) / SCHEDULE_SLOT_MINUTES;
+
+function renderSchedule(schedule) {
+    const grid = document.getElementById("schedule-grid");
+    const empty = document.getElementById("schedule-empty");
+    grid.innerHTML = "";
+
+    empty.hidden = !schedule || schedule.length === 0;
+    if (!schedule || schedule.length === 0) return;
+
+    SCHEDULE_DAYS.forEach((day) => {
+        const header = document.createElement("div");
+        header.className = "schedule-day-header";
+        header.style.gridColumn = String(SCHEDULE_DAYS.indexOf(day) + 2);
+        header.style.gridRow = "1";
+        header.textContent = day;
+        grid.appendChild(header);
+    });
+
+    for (let hour = 0; hour < 24; hour++) {
+        const label = document.createElement("div");
+        label.className = "schedule-hour-label";
+        label.style.gridRowStart = String(hour * 4 + 2);
+        label.textContent = `${String(hour).padStart(2, "0")}:00`;
+        grid.appendChild(label);
+    }
+
+    schedule.forEach((entry) => {
+        const dayIndex = SCHEDULE_DAYS.indexOf(entry.day);
+        const startSlot = entry.start_minutes / SCHEDULE_SLOT_MINUTES;
+        const endSlot = entry.end_minutes / SCHEDULE_SLOT_MINUTES;
+
+        const block = document.createElement("div");
+        block.className = "schedule-block";
+        block.textContent = entry.name;
+        block.title = entry.name;
+        block.style.gridColumn = String(dayIndex + 2);
+        block.style.gridRow = `${startSlot + 2} / ${endSlot + 2}`;
+        grid.appendChild(block);
+    });
+
+    grid.style.gridTemplateRows = `auto repeat(${SCHEDULE_SLOTS_PER_DAY}, minmax(4px, 1fr))`;
+}
+
+renderSolverParams();
+renderSchedule(window.INITIAL_SCHEDULE);
 loadTasks();

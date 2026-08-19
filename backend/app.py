@@ -20,8 +20,12 @@ app = Flask(
 
 @app.route("/")
 def index():
-    """Serve the main page."""
-    return render_template("index.html")
+    """Serve the main page, passing the solver defaults and persisted schedule."""
+    return render_template(
+        "index.html",
+        solver_defaults=scheduler.default_parameters(),
+        schedule=storage.load()["schedule"],
+    )
 
 
 @app.route("/tasks", methods=["GET"])

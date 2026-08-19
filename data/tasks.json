@@ -1,11 +1,26 @@
 {
-  "tasks": [],
+  "tasks": [
+    {
+      "name": "test",
+      "duration_minutes": 30
+    },
+    {
+      "name": "test 2",
+      "duration_minutes": 45
+    }
+  ],
   "schedule": [
     {
-      "name": "Write report",
+      "name": "test",
+      "day": "Sun",
+      "start_minutes": 45,
+      "end_minutes": 75
+    },
+    {
+      "name": "test 2",
       "day": "Sun",
       "start_minutes": 0,
-      "end_minutes": 90
+      "end_minutes": 45
     }
   ]
 }

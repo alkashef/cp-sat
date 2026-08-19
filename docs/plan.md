@@ -16,8 +16,8 @@ reasoning (the CP-SAT model itself).
 | 3 | CP-SAT scheduling core | DONE | claude-opus-5 | on | high |
 | 4 | Solve endpoint & wiring | DONE | claude-sonnet-5 | off | medium |
 | 5 | Tasks tab UI | DONE | claude-sonnet-5 | off | medium |
-| 6 | Solver tab UI | TODO | claude-sonnet-5 | off | medium |
-| 7 | Schedule tab UI | TODO | claude-sonnet-5 | off | medium |
+| 6 | Solver tab UI | DONE | claude-sonnet-5 | off | medium |
+| 7 | Schedule tab UI | DONE | claude-sonnet-5 | off | medium |
 | 8 | Help icons & in-app learning content | TODO | claude-sonnet-5 | off | low |
 | 9 | Color scheme & visual polish | TODO | claude-haiku-4-5 | off | low |
 | 10 | Source code documentation pass | TODO | claude-sonnet-5 | off | low |
@@ -226,7 +226,7 @@ edit/remove, Solve button with loading/error states.
 - **Thinking mode:** off
 - **Effort level:** medium
 
-## Milestone 6 — Solver tab UI [TODO]
+## Milestone 6 — Solver tab UI [DONE]
 
 Parameter table (name, description, help icon, editable input) wired to the
 in-memory state consumed by the Solve button.
@@ -251,7 +251,7 @@ in-memory state consumed by the Solve button.
 - **Thinking mode:** off
 - **Effort level:** medium
 
-## Milestone 7 — Schedule tab UI [TODO]
+## Milestone 7 — Schedule tab UI [DONE]
 
 CSS Grid weekly calendar rendering the solved schedule, including the
 page-load-from-persisted-schedule path.

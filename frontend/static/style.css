@@ -89,3 +89,80 @@ button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+#solver-params {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+#solver-params th,
+#solver-params td {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+#solver-params input[type="number"] {
+    width: 6rem;
+}
+
+.help-icon {
+    border-radius: 50%;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    line-height: 1;
+    border: 1px solid #ccc;
+    background: none;
+    cursor: pointer;
+    margin-left: 0.25rem;
+}
+
+#tab-schedule h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+#schedule-grid {
+    display: grid;
+    grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr));
+    border-left: 1px solid #eee;
+    border-top: 1px solid #eee;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.schedule-day-header {
+    grid-row: 1;
+    text-align: center;
+    font-weight: bold;
+    padding: 0.25rem;
+    border-right: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+.schedule-hour-label {
+    grid-column: 1;
+    grid-row-end: span 4;
+    font-size: 0.7rem;
+    color: #777;
+    padding-right: 0.25rem;
+    text-align: right;
+    border-right: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+.schedule-block {
+    background: #3EC6FF;
+    color: #04202F;
+    border-radius: 3px;
+    margin: 1px 2px;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}

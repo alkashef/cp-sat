@@ -104,15 +104,25 @@ def _build_model(tasks):
     return model, starts
 
 
-def _apply_parameters(solver, overrides):
-    """Apply solver parameters, taking config/.env defaults for anything not overridden."""
-    parameters = {
+def default_parameters():
+    """Return the solver parameter defaults from `config/.env`.
+
+    Shared by `_apply_parameters` below and by `app.py`'s index route, which
+    passes these to the Solver tab so its "Reset to defaults" action doesn't
+    need its own copy of the config values.
+    """
+    return {
         "num_search_workers": int(os.getenv("SOLVER_WORKERS", 8)),
         "max_time_in_seconds": float(os.getenv("SOLVER_MAX_TIME_SECONDS", 10)),
         "log_search_progress": os.getenv("SOLVER_LOG_SEARCH_PROGRESS", "False").lower() == "true",
         "randomize_search": os.getenv("SOLVER_RANDOMIZE_SEARCH", "False").lower() == "true",
         "relative_gap_limit": float(os.getenv("SOLVER_GAP_LIMIT", 0.01)),
     }
+
+
+def _apply_parameters(solver, overrides):
+    """Apply solver parameters, taking config/.env defaults for anything not overridden."""
+    parameters = default_parameters()
     parameters.update(overrides or {})
 
     # Solver parameters tune *how* CP-SAT searches, never which schedules count
