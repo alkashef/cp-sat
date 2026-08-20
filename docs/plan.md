@@ -392,7 +392,7 @@ variables too, so `solve()` and `describe_model()` share one construction.
     `IntervalVar` entry per task, the `makespan`, the `AddNoOverlap` and
     `AddMaxEquality` constraints in plain English, and the task names and
     durations you just entered.
-  - Expand "Raw CP-SAT model" and confirm it shows protobuf text listing the
+  - Confirm the Model section's raw dump shows protobuf text listing the
     same variables and constraints in CP-SAT's native form.
   - Confirm all of the above appears without ever clicking Solve.
   - Edit a task's duration on the Tasks tab, return to the Solver tab, and

@@ -352,7 +352,7 @@ function renderModel(model) {
     empty.hidden = hasModel;
     if (!hasModel) return;
 
-    document.querySelector("#model-raw pre").textContent = model.raw_proto;
+    document.getElementById("model-raw").textContent = model.raw_proto;
 }
 
 const SCHEDULE_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

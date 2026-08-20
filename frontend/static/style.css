@@ -366,14 +366,7 @@ button:disabled {
     text-align: left;
 }
 
-#model-raw summary {
-    cursor: pointer;
-    color: var(--accent);
-    padding: 0.5rem 0;
-    font-weight: bold;
-}
-
-#model-raw pre {
+#model-raw {
     margin: 0;
     padding: 0.75rem;
     max-height: 20rem;

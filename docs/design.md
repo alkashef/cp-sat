@@ -370,10 +370,10 @@ just the settings that control the search (REQ-24, REQ-25).
   and no fetch on every task edit. It is independent of solving: the model is
   built to be read, never solved, so the section fills in without ever
   clicking Solve.
-- A collapsible **Raw CP-SAT model** `<details>` holding the `raw_proto` text
-  — the model in CP-SAT's own protobuf form, listing every variable and
-  constraint as the solver receives them. The native HTML disclosure widget
-  keeps this free of extra JS state. The `GET /model` response still carries
+- A `<pre id="model-raw">` holding the `raw_proto` text — the model in
+  CP-SAT's own protobuf form, listing every variable and constraint as the
+  solver receives them — displayed plainly under the "Model" heading, with no
+  nested title of its own. The `GET /model` response still carries
   `variables`/`constraints`/`objective` alongside `raw_proto` (see "Flask
   API" above), but only `raw_proto` is rendered — the frontend no longer
   shows a separate friendly summary of them.
