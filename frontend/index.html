@@ -20,31 +20,48 @@
 
     <main>
         <section id="tab-tasks" class="tab-panel active">
-            <form id="task-form">
-                <input type="text" id="task-name" placeholder="Task name" required>
-                <input type="number" id="task-duration" placeholder="Duration (minutes)" step="15" min="15" required>
-                <select id="task-mode">
-                    <option value="flexible">Flexible</option>
-                    <option value="fixed_hour">Fixed hour</option>
-                    <option value="fixed_days">Fixed day(s)</option>
-                    <option value="fixed">Fixed</option>
-                </select>
-                <fieldset id="task-days" class="schedule-days" hidden>
-                    <legend>Days</legend>
-                    <label><input type="checkbox" value="Sun">Sun</label>
-                    <label><input type="checkbox" value="Mon">Mon</label>
-                    <label><input type="checkbox" value="Tue">Tue</label>
-                    <label><input type="checkbox" value="Wed">Wed</label>
-                    <label><input type="checkbox" value="Thu">Thu</label>
-                    <label><input type="checkbox" value="Fri">Fri</label>
-                    <label><input type="checkbox" value="Sat">Sat</label>
-                </fieldset>
-                <select id="task-hour" hidden>
-                    {% for hour in range(24) %}
-                    <option value="{{ hour }}">{{ "%02d:00" % hour }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit">Add</button>
+            <form id="task-form" class="task-form-grid">
+                <div class="form-row">
+                    <label for="task-mode">Type</label>
+                    <select id="task-mode">
+                        <option value="flexible">Flexible</option>
+                        <option value="fixed_hour">Fixed hour</option>
+                        <option value="fixed_days">Fixed day(s)</option>
+                        <option value="fixed">Fixed</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="task-name">Name</label>
+                    <input type="text" id="task-name" required>
+                </div>
+                <div class="form-row">
+                    <label for="task-hour">Start time</label>
+                    <select id="task-hour">
+                        {% for hour in range(24) %}
+                        <option value="{{ hour }}">{{ "%02d:00" % hour }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="task-duration">Duration</label>
+                    <input type="number" id="task-duration" step="15" min="15" required>
+                </div>
+                <div class="form-row">
+                    <span class="form-row-label" id="task-days-label">Days</span>
+                    <fieldset id="task-days" class="schedule-days" aria-labelledby="task-days-label">
+                        <label><input type="checkbox" value="Sun">Sun</label>
+                        <label><input type="checkbox" value="Mon">Mon</label>
+                        <label><input type="checkbox" value="Tue">Tue</label>
+                        <label><input type="checkbox" value="Wed">Wed</label>
+                        <label><input type="checkbox" value="Thu">Thu</label>
+                        <label><input type="checkbox" value="Fri">Fri</label>
+                        <label><input type="checkbox" value="Sat">Sat</label>
+                    </fieldset>
+                </div>
+                <div class="form-row form-row-actions">
+                    <span></span>
+                    <button type="submit">Add</button>
+                </div>
             </form>
             <p id="task-form-error" class="error-message" hidden></p>
 

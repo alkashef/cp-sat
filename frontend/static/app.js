@@ -80,14 +80,15 @@ function formatScheduleMode(task) {
     }
 }
 
-// Shows the day checkboxes only for modes that use them (Fixed day(s)/Fixed)
-// and the hour select only for modes that use it (Fixed hour/Fixed) — a
-// field is only visible when it actually affects placement (see
-// docs/design.md's "Scheduling Modes").
-function updateScheduleControlVisibility(modeSelect, daysFieldset, hourSelect) {
+// Dims and disables (rather than hides) the day checkboxes and hour select
+// when the selected type doesn't use them — days apply to Fixed day(s)/Fixed,
+// the hour to Fixed hour/Fixed (see docs/design.md's "Scheduling Modes") —
+// so the field only affects placement when it's enabled, but the form's
+// layout stays stable as the type changes.
+function updateScheduleControlAvailability(modeSelect, daysFieldset, hourSelect) {
     const mode = modeSelect.value;
-    daysFieldset.hidden = !(mode === "fixed_days" || mode === "fixed");
-    hourSelect.hidden = !(mode === "fixed_hour" || mode === "fixed");
+    daysFieldset.disabled = !(mode === "fixed_days" || mode === "fixed");
+    hourSelect.disabled = !(mode === "fixed_hour" || mode === "fixed");
 }
 
 function cloneScheduleControls() {
@@ -107,7 +108,7 @@ function applyTaskToScheduleControls(task, modeSelect, daysFieldset, hourSelect)
         checkbox.checked = selectedDays.has(checkbox.value);
     });
     if (task.hour != null) hourSelect.value = String(task.hour);
-    updateScheduleControlVisibility(modeSelect, daysFieldset, hourSelect);
+    updateScheduleControlAvailability(modeSelect, daysFieldset, hourSelect);
 }
 
 function readScheduleControls(modeSelect, daysFieldset, hourSelect) {
@@ -121,9 +122,9 @@ function readScheduleControls(modeSelect, daysFieldset, hourSelect) {
 }
 
 taskModeSelect.addEventListener("change", () =>
-    updateScheduleControlVisibility(taskModeSelect, taskDaysFieldset, taskHourSelect)
+    updateScheduleControlAvailability(taskModeSelect, taskDaysFieldset, taskHourSelect)
 );
-updateScheduleControlVisibility(taskModeSelect, taskDaysFieldset, taskHourSelect);
+updateScheduleControlAvailability(taskModeSelect, taskDaysFieldset, taskHourSelect);
 
 async function fetchTasks() {
     const response = await fetch("/tasks");
@@ -195,7 +196,7 @@ function startEdit(li, task) {
     const { modeSelect, daysFieldset, hourSelect } = cloneScheduleControls();
     applyTaskToScheduleControls(task, modeSelect, daysFieldset, hourSelect);
     modeSelect.addEventListener("change", () =>
-        updateScheduleControlVisibility(modeSelect, daysFieldset, hourSelect)
+        updateScheduleControlAvailability(modeSelect, daysFieldset, hourSelect)
     );
 
     const saveButton = document.createElement("button");
@@ -271,7 +272,7 @@ document.getElementById("task-form").addEventListener("submit", async (event) =>
         checkbox.checked = false;
     });
     taskHourSelect.value = "0";
-    updateScheduleControlVisibility(taskModeSelect, taskDaysFieldset, taskHourSelect);
+    updateScheduleControlAvailability(taskModeSelect, taskDaysFieldset, taskHourSelect);
     await loadTasks();
 });
 

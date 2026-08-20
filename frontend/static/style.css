@@ -81,14 +81,40 @@ main {
     display: block;
 }
 
-#task-form {
+.task-form-grid {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-width: 26rem;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--line);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 6rem 1fr;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.form-row label,
+.form-row-label {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+}
+
+/* A field whose control is disabled (not applicable to the selected task
+   type) dims its label too, so the whole row reads as inactive rather than
+   just its box. */
+.form-row:has(:disabled) label,
+.form-row:has(:disabled) .form-row-label {
+    opacity: 0.45;
+}
+
+.form-row-actions {
+    justify-items: start;
 }
 
 #task-form input,
@@ -99,6 +125,8 @@ main {
     border: 1px solid var(--line);
     border-radius: 3px;
     font-size: 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .schedule-days {
@@ -112,19 +140,7 @@ main {
     border: 1px solid var(--line);
     border-radius: 3px;
     font-size: 0.85rem;
-}
-
-/* A class selector and the `hidden` attribute's UA-stylesheet rule have equal
-   specificity, so `.schedule-days { display: flex }` above would otherwise
-   win and defeat `hidden`. This rule's higher specificity restores it. */
-.schedule-days[hidden] {
-    display: none;
-}
-
-.schedule-days legend {
-    padding: 0 0.25rem;
-    color: var(--ink-muted);
-    font-size: 0.8rem;
+    transition: opacity 0.2s;
 }
 
 .schedule-days label {
@@ -138,6 +154,15 @@ main {
 .schedule-days input[type="checkbox"] {
     cursor: pointer;
     accent-color: var(--accent);
+}
+
+/* Fields that don't apply to the selected task type (e.g. Start time when
+   Type is "Fixed day(s)") are dimmed and disabled rather than hidden, so the
+   form's layout stays stable as the user changes Type. */
+#task-form select:disabled,
+.schedule-days:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 #task-form button {
