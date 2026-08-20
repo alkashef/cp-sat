@@ -22,6 +22,7 @@ reasoning (the CP-SAT model itself).
 | 9 | Color scheme & visual polish | DONE | claude-haiku-4-5 | off | low |
 | 10 | Source code documentation pass | DONE | claude-sonnet-5 | off | low |
 | 11 | Model inspection panel | DONE | claude-sonnet-5 | off | medium |
+| 12 | Per-task scheduling constraints | DONE | claude-sonnet-5 | off | high |
 
 ## Milestone 1 — Project scaffolding & config [DONE]
 
@@ -399,3 +400,57 @@ variables too, so `solve()` and `describe_model()` share one construction.
 - **Model:** claude-sonnet-5
 - **Thinking mode:** off
 - **Effort level:** medium
+
+## Milestone 12 — Per-task scheduling constraints [DONE]
+
+Adds a per-task `schedule_mode` (Flexible / Fixed hour / Fixed day(s) /
+Fixed), a day set, and an hour, so a task can be pinned to specific day(s)
+and/or a specific starting hour instead of always floating freely across the
+week. `scheduler.py`'s `_build_model` now expands each task into one or more
+CP-SAT "occurrences" (recurring for Fixed day(s)/Fixed with multiple days
+selected), each with a start-variable domain shaped by its mode; a Fixed task
+is not subject to optimization at all and is validated against other Fixed
+tasks for overlap at add/edit time rather than at solve time. Fixed-mode
+tasks render in a visually distinct shade in both the task list and the
+schedule grid.
+
+- **Covers:** REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32
+- **pytest:**
+  - `test_scheduler.py`: a `fixed_days` task with N selected days produces N
+    schedule entries sharing its name, each confined to its own day; a
+    `fixed_hour` task's entry always starts at the selected hour regardless
+    of which day the solver picks; a `fixed` task's entries land at the
+    exact day+hour every solve; `fixed_ranges()` returns the right slot
+    ranges for a `fixed` task and `[]` for the other three modes;
+    `describe_model()` renders `∪`-joined domains for discrete/multi-range
+    domains; every existing test in this file (built from plain
+    `{"name", "duration_minutes"}` dicts, no `schedule_mode`) keeps passing
+    unmodified, proving the `flexible` default preserves today's behavior
+    exactly.
+  - `test_tasks_api.py`: adding a task in each of the four modes succeeds
+    with the expected stored shape; invalid `schedule_mode`, empty `days`
+    for a day-locked mode, missing/out-of-range `hour` for an hour-locked
+    mode, and a duration that doesn't fit in a day all return 400; a second
+    `fixed` task overlapping an existing `fixed` task's slot returns 409 on
+    both add and edit, while a non-overlapping `fixed` task (or an edit that
+    keeps a task's own slot) succeeds.
+- **User tests:**
+  - Start the app (`python backend/app.py`) and open
+    `http://127.0.0.1:5000/`. Add a Flexible task (the default) and confirm
+    it behaves exactly as before — no day/hour inputs affect it.
+  - Add a "Fixed hour" task at hour 14, click Solve, and confirm it always
+    starts at 14:00 regardless of which day CP-SAT chose for it.
+  - Add a "Fixed day(s)" task on Mon+Wed+Fri, click Solve, and confirm three
+    blocks appear (one per day) with independently-chosen start times.
+  - Add a "Fixed" task on Tue at 09:00. Confirm the Tasks tab row and the
+    Schedule tab block both render in the distinct fixed-task shade (not the
+    amber used for other tasks), and that it always lands at exactly Tue
+    09:00 no matter how many times you re-solve.
+  - Try adding a second "Fixed" task whose day+hour overlaps the first;
+    confirm an inline error appears and the task is not added.
+  - Switch to the Solver tab with a mix of all four modes in the task list
+    and confirm the Model section's Variables table lists one row per
+    occurrence with a sensible domain for each mode.
+- **Model:** claude-sonnet-5
+- **Thinking mode:** off
+- **Effort level:** high

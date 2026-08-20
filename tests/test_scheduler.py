@@ -122,3 +122,86 @@ def test_describe_model_with_no_tasks_returns_an_empty_description():
         "objective": None,
         "raw_proto": "",
     }
+
+
+def test_fixed_days_task_produces_one_entry_per_selected_day():
+    task = {
+        "name": "Standup",
+        "duration_minutes": 30,
+        "schedule_mode": "fixed_days",
+        "days": ["Mon", "Wed", "Fri"],
+        "hour": None,
+    }
+
+    schedule = scheduler.solve([task])["schedule"]
+
+    assert sorted(entry["day"] for entry in schedule) == ["Fri", "Mon", "Wed"]
+    assert all(entry["name"] == "Standup" for entry in schedule)
+    assert all(entry["end_minutes"] - entry["start_minutes"] == 30 for entry in schedule)
+    assert all(entry["fixed"] is False for entry in schedule)
+
+
+def test_fixed_hour_task_always_starts_at_the_given_hour_on_any_day():
+    task = {
+        "name": "Check email",
+        "duration_minutes": 15,
+        "schedule_mode": "fixed_hour",
+        "days": [],
+        "hour": 14,
+    }
+
+    schedule = scheduler.solve([task])["schedule"]
+
+    assert len(schedule) == 1
+    assert schedule[0]["start_minutes"] == 14 * 60
+    assert schedule[0]["fixed"] is False
+
+
+def test_fixed_task_lands_at_the_exact_day_and_hour_every_solve():
+    task = {
+        "name": "Standup",
+        "duration_minutes": 30,
+        "schedule_mode": "fixed",
+        "days": ["Tue", "Thu"],
+        "hour": 9,
+    }
+
+    schedule = scheduler.solve([task])["schedule"]
+
+    assert sorted((entry["day"], entry["start_minutes"]) for entry in schedule) == [
+        ("Thu", 9 * 60),
+        ("Tue", 9 * 60),
+    ]
+    assert all(entry["fixed"] is True for entry in schedule)
+
+
+def test_fixed_ranges_returns_slot_ranges_only_for_fixed_tasks():
+    fixed_task = {
+        "name": "Standup",
+        "duration_minutes": 30,
+        "schedule_mode": "fixed",
+        "days": ["Tue"],
+        "hour": 9,
+    }
+    day_index = scheduler.DAYS.index("Tue")
+    expected_start = day_index * scheduler.SLOTS_PER_DAY + 9 * scheduler.SLOTS_PER_HOUR
+
+    assert scheduler.fixed_ranges(fixed_task) == [(expected_start, expected_start + 2)]
+    for mode in ("flexible", "fixed_hour", "fixed_days"):
+        assert scheduler.fixed_ranges({**fixed_task, "schedule_mode": mode}) == []
+
+
+def test_describe_model_domain_is_union_joined_for_a_fixed_hour_task():
+    task = {
+        "name": "Check email",
+        "duration_minutes": 15,
+        "schedule_mode": "fixed_hour",
+        "days": [],
+        "hour": 14,
+    }
+
+    variables = scheduler.describe_model([task])["variables"]
+    domain = next(v["domain"] for v in variables if v["kind"] == "IntVar (start slot)")
+
+    # 7 candidate days (any day, but this exact hour), joined by 6 "∪"s.
+    assert domain.count("∪") == 6

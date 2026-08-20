@@ -58,6 +58,73 @@ function updateSolveButtonState(taskCount) {
     document.getElementById("solve-button").disabled = taskCount === 0;
 }
 
+// The scheduling-mode select, day checkboxes, and hour select all live once
+// in the static Add form (index.html); the inline edit row clones them
+// rather than re-declaring the same option lists in JS.
+const taskModeSelect = document.getElementById("task-mode");
+const taskDaysFieldset = document.getElementById("task-days");
+const taskHourSelect = document.getElementById("task-hour");
+
+function formatScheduleMode(task) {
+    const days = (task.days || []).join(", ");
+    const hour = task.hour != null ? `${String(task.hour).padStart(2, "0")}:00` : "";
+    switch (task.schedule_mode) {
+        case "fixed_hour":
+            return `Fixed hour: ${hour}`;
+        case "fixed_days":
+            return `Fixed days: ${days}`;
+        case "fixed":
+            return `Fixed: ${days} · ${hour}`;
+        default:
+            return "";
+    }
+}
+
+// Shows the day checkboxes only for modes that use them (Fixed day(s)/Fixed)
+// and the hour select only for modes that use it (Fixed hour/Fixed) — a
+// field is only visible when it actually affects placement (see
+// docs/design.md's "Scheduling Modes").
+function updateScheduleControlVisibility(modeSelect, daysFieldset, hourSelect) {
+    const mode = modeSelect.value;
+    daysFieldset.hidden = !(mode === "fixed_days" || mode === "fixed");
+    hourSelect.hidden = !(mode === "fixed_hour" || mode === "fixed");
+}
+
+function cloneScheduleControls() {
+    const modeSelect = taskModeSelect.cloneNode(true);
+    modeSelect.removeAttribute("id");
+    const daysFieldset = taskDaysFieldset.cloneNode(true);
+    daysFieldset.removeAttribute("id");
+    const hourSelect = taskHourSelect.cloneNode(true);
+    hourSelect.removeAttribute("id");
+    return { modeSelect, daysFieldset, hourSelect };
+}
+
+function applyTaskToScheduleControls(task, modeSelect, daysFieldset, hourSelect) {
+    modeSelect.value = task.schedule_mode || "flexible";
+    const selectedDays = new Set(task.days || []);
+    daysFieldset.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+        checkbox.checked = selectedDays.has(checkbox.value);
+    });
+    if (task.hour != null) hourSelect.value = String(task.hour);
+    updateScheduleControlVisibility(modeSelect, daysFieldset, hourSelect);
+}
+
+function readScheduleControls(modeSelect, daysFieldset, hourSelect) {
+    return {
+        schedule_mode: modeSelect.value,
+        days: Array.from(daysFieldset.querySelectorAll("input[type=checkbox]:checked")).map(
+            (checkbox) => checkbox.value
+        ),
+        hour: Number(hourSelect.value),
+    };
+}
+
+taskModeSelect.addEventListener("change", () =>
+    updateScheduleControlVisibility(taskModeSelect, taskDaysFieldset, taskHourSelect)
+);
+updateScheduleControlVisibility(taskModeSelect, taskDaysFieldset, taskHourSelect);
+
 async function fetchTasks() {
     const response = await fetch("/tasks");
     return response.json();
@@ -74,6 +141,9 @@ function renderTasks(tasks) {
     tasks.forEach((task) => {
         const li = document.createElement("li");
         li.dataset.name = task.name;
+        // Fixed-mode tasks are not subject to optimization, so they get a
+        // visually distinct shade from tasks CP-SAT actively places.
+        li.classList.toggle("task-fixed", task.schedule_mode === "fixed");
 
         const nameSpan = document.createElement("span");
         nameSpan.className = "task-name";
@@ -82,6 +152,10 @@ function renderTasks(tasks) {
         const durationSpan = document.createElement("span");
         durationSpan.className = "task-duration";
         durationSpan.textContent = formatDuration(task.duration_minutes);
+
+        const modeSpan = document.createElement("span");
+        modeSpan.className = "task-mode";
+        modeSpan.textContent = formatScheduleMode(task);
 
         const editButton = document.createElement("button");
         editButton.textContent = "Edit";
@@ -93,6 +167,7 @@ function renderTasks(tasks) {
 
         li.appendChild(nameSpan);
         li.appendChild(durationSpan);
+        li.appendChild(modeSpan);
         li.appendChild(editButton);
         li.appendChild(removeButton);
         list.appendChild(li);
@@ -117,10 +192,21 @@ function startEdit(li, task) {
     durationInput.min = "15";
     durationInput.value = task.duration_minutes;
 
+    const { modeSelect, daysFieldset, hourSelect } = cloneScheduleControls();
+    applyTaskToScheduleControls(task, modeSelect, daysFieldset, hourSelect);
+    modeSelect.addEventListener("change", () =>
+        updateScheduleControlVisibility(modeSelect, daysFieldset, hourSelect)
+    );
+
     const saveButton = document.createElement("button");
     saveButton.textContent = "Save";
     saveButton.addEventListener("click", () =>
-        saveEdit(task.name, nameInput.value, Number(durationInput.value))
+        saveEdit(
+            task.name,
+            nameInput.value,
+            Number(durationInput.value),
+            readScheduleControls(modeSelect, daysFieldset, hourSelect)
+        )
     );
 
     const cancelButton = document.createElement("button");
@@ -129,15 +215,18 @@ function startEdit(li, task) {
 
     li.appendChild(nameInput);
     li.appendChild(durationInput);
+    li.appendChild(modeSelect);
+    li.appendChild(daysFieldset);
+    li.appendChild(hourSelect);
     li.appendChild(saveButton);
     li.appendChild(cancelButton);
 }
 
-async function saveEdit(originalName, newName, durationMinutes) {
+async function saveEdit(originalName, newName, durationMinutes, scheduleFields) {
     const response = await fetch(`/tasks/${encodeURIComponent(originalName)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, duration_minutes: durationMinutes }),
+        body: JSON.stringify({ name: newName, duration_minutes: durationMinutes, ...scheduleFields }),
     });
     const body = await response.json();
     if (!response.ok) {
@@ -164,6 +253,7 @@ document.getElementById("task-form").addEventListener("submit", async (event) =>
         body: JSON.stringify({
             name: nameInput.value,
             duration_minutes: Number(durationInput.value),
+            ...readScheduleControls(taskModeSelect, taskDaysFieldset, taskHourSelect),
         }),
     });
     const body = await response.json();
@@ -176,6 +266,12 @@ document.getElementById("task-form").addEventListener("submit", async (event) =>
     showFormError(null);
     nameInput.value = "";
     durationInput.value = "";
+    taskModeSelect.value = "flexible";
+    taskDaysFieldset.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+        checkbox.checked = false;
+    });
+    taskHourSelect.value = "0";
+    updateScheduleControlVisibility(taskModeSelect, taskDaysFieldset, taskHourSelect);
     await loadTasks();
 });
 
@@ -345,7 +441,7 @@ function renderSchedule(schedule) {
     const empty = document.getElementById("schedule-empty");
     grid.innerHTML = "";
 
-    empty.hidden = !schedule || schedule.length === 0;
+    empty.hidden = !!schedule && schedule.length !== 0;
     if (!schedule || schedule.length === 0) return;
 
     SCHEDULE_DAYS.forEach((day) => {
@@ -380,6 +476,9 @@ function renderSchedule(schedule) {
 
         const block = document.createElement("div");
         block.className = "schedule-block";
+        // Fixed-mode occurrences are not subject to optimization, so they're
+        // shaded distinctly from blocks CP-SAT actively placed (REQ-32).
+        if (entry.fixed) block.classList.add("schedule-block-fixed");
         block.textContent = entry.name;
         block.title = entry.name;
         block.style.gridColumn = String(dayIndex + 2);

@@ -9,6 +9,8 @@
     --accent: #FF8A3D;
     --accent-ink: #241200;
     --accent-2: #FFFFFF;
+    --fixed: #3D5A73;
+    --fixed-ink: #EAF4FB;
     --schedule-slot-height: 0.625rem;
 }
 
@@ -81,19 +83,61 @@ main {
 
 #task-form {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--line);
 }
 
-#task-form input {
+#task-form input,
+#task-form select {
     padding: 0.5rem;
     background-color: var(--surface-alt);
     color: var(--ink);
     border: 1px solid var(--line);
     border-radius: 3px;
     font-size: 0.9rem;
+}
+
+.schedule-days {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    margin: 0;
+    background-color: var(--surface-alt);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-size: 0.85rem;
+}
+
+/* A class selector and the `hidden` attribute's UA-stylesheet rule have equal
+   specificity, so `.schedule-days { display: flex }` above would otherwise
+   win and defeat `hidden`. This rule's higher specificity restores it. */
+.schedule-days[hidden] {
+    display: none;
+}
+
+.schedule-days legend {
+    padding: 0 0.25rem;
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+}
+
+.schedule-days label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.schedule-days input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--accent);
 }
 
 #task-form button {
@@ -136,6 +180,24 @@ main {
 #task-list li .task-duration {
     color: var(--ink-muted);
     font-size: 0.9rem;
+}
+
+#task-list li .task-mode {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Fixed-mode tasks are not subject to optimization, so they get a shade
+   distinct from the surface color used for tasks CP-SAT actively places. */
+#task-list li.task-fixed {
+    background-color: var(--fixed);
+}
+
+#task-list li.task-fixed .task-duration,
+#task-list li.task-fixed .task-mode {
+    color: var(--fixed-ink);
+    opacity: 0.8;
 }
 
 #task-list button {
@@ -469,4 +531,12 @@ button:disabled {
     white-space: nowrap;
     min-width: 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Fixed-mode occurrences are not subject to optimization, so they're shaded
+   distinctly from the amber used for blocks CP-SAT actively placed (REQ-32). */
+.schedule-block-fixed {
+    background: var(--fixed);
+    color: var(--fixed-ink);
+    border-left-color: var(--ink-muted);
 }

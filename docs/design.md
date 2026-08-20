@@ -93,27 +93,53 @@ re-clicking Solve. Shape:
 ```json
 {
   "tasks": [
-    {"name": "Write report", "duration_minutes": 90}
+    {
+      "name": "Write report",
+      "duration_minutes": 90,
+      "schedule_mode": "flexible",
+      "days": [],
+      "hour": null
+    },
+    {
+      "name": "Standup",
+      "duration_minutes": 15,
+      "schedule_mode": "fixed",
+      "days": ["Mon", "Wed", "Fri"],
+      "hour": 9
+    }
   ],
   "schedule": [
-    {"name": "Write report", "day": "Mon", "start_minutes": 540, "end_minutes": 630}
+    {"name": "Write report", "day": "Mon", "start_minutes": 540, "end_minutes": 630, "fixed": false},
+    {"name": "Standup", "day": "Mon", "start_minutes": 540, "end_minutes": 555, "fixed": true},
+    {"name": "Standup", "day": "Wed", "start_minutes": 540, "end_minutes": 555, "fixed": true},
+    {"name": "Standup", "day": "Fri", "start_minutes": 540, "end_minutes": 555, "fixed": true}
   ]
 }
 ```
+
+`schedule_mode`/`days`/`hour` are described under "Scheduling Modes" below.
+A recurring task (`fixed_days`/`fixed` with more than one day) produces
+multiple `schedule` entries sharing the same `name`, one per occurrence —
+`schedule` is a list of occurrences, not a 1:1 map from tasks.
 
 ### CP-SAT Model
 
 - Time is represented as 15-minute slots. Horizon = 7 days x 24 hours x 4
   slots/hour = 672 units. Each task's duration in minutes is converted to a
   slot count (`duration_minutes / 15`).
-- Each task gets an interval variable:
-  `start = NewIntVar(0, horizon - dur, name)`,
-  `interval = NewIntervalVar(start, dur, start + dur, name)`.
-- `model.AddNoOverlap(intervals)` enforces REQ-9 (no two tasks overlap).
+- Each task expands into one or more **occurrences** (see "Scheduling Modes"
+  below); each occurrence gets its own interval variable:
+  `start = NewIntVarFromDomain(domain, label)`,
+  `interval = NewIntervalVar(start, dur, start + dur, label)`. A task in
+  Flexible mode always has exactly one occurrence, so this reduces to
+  today's one-variable-per-task shape.
+- `model.AddNoOverlap(intervals)` enforces REQ-9 (no two occurrences overlap),
+  taken across every occurrence of every task.
 - Idle time is minimized by minimizing the makespan (the end time of the
-  last-finishing task): since total task duration is fixed, minimizing the
-  last end time is equivalent to minimizing total idle time across the week.
-  `model.AddMaxEquality(makespan, ends)`, `model.Minimize(makespan)`.
+  last-finishing occurrence): since total scheduled duration is fixed,
+  minimizing the last end time is equivalent to minimizing total idle time
+  across the week. `model.AddMaxEquality(makespan, ends)`,
+  `model.Minimize(makespan)`.
 - If the solver status is not `OPTIMAL`/`FEASIBLE`, the solve endpoint returns
   an error and the stored schedule is left unchanged (REQ-11's infeasible
   case).
@@ -132,30 +158,72 @@ An empty task list returns an empty schedule without invoking the solver.
 
 `describe_model(tasks)` is the read-only counterpart behind `GET /model`
 (REQ-23, REQ-24, REQ-25). It builds the same model through the shared
-`_build_model(tasks)` helper — which returns the model along with each task's
-start and interval variable and the makespan variable, so neither caller
-duplicates the construction — and returns a JSON-serializable description of
-it: `variables` (name, kind, domain), `constraints` (CP-SAT method, plain
-description, variables involved), `objective`, and `raw_proto`, the model's
-`str(model.Proto())` dump. It never calls the solver; an empty task list
-returns an empty description without building a model at all.
+`_build_model(tasks)` helper — which returns the model along with each
+occurrence's start and interval variable and the makespan variable, so neither
+caller duplicates the construction — and returns a JSON-serializable
+description of it: `variables` (name, kind, domain), `constraints` (CP-SAT
+method, plain description, variables involved), `objective`, and `raw_proto`,
+the model's `str(model.Proto())` dump. It never calls the solver; an empty
+task list returns an empty description without building a model at all.
+
+#### Scheduling Modes
+
+REQ-26–REQ-30: a task's `schedule_mode` controls how many occurrences it
+expands into and what domain (the set of slots CP-SAT may choose from) each
+occurrence's start variable gets. A CP-SAT `Domain` is not always a single
+contiguous range — it can be a set of disjoint ranges or individual values —
+which is how "the solver may only start this task at one of these specific
+slots" gets expressed as a constraint on the variable itself, rather than as
+an extra `Add...` call.
+
+| `schedule_mode` | Occurrences | Start domain |
+| --- | --- | --- |
+| `flexible` | 1 | `[0, HORIZON_SLOTS - dur]` — anywhere in the week (today's behavior). |
+| `fixed_hour` | 1 | `{day*SLOTS_PER_DAY + hour*4 for day in 0..6}` — the given hour, any day; `days` plays no role. |
+| `fixed_days` | 1 per selected day | `[day*SLOTS_PER_DAY, day*SLOTS_PER_DAY + SLOTS_PER_DAY - dur]` per day — anywhere within that specific day. |
+| `fixed` | 1 per selected day | `{day*SLOTS_PER_DAY + hour*4}` — a single fixed value per day. |
+
+A `fixed` occurrence's start variable has a domain of exactly one value —
+CP-SAT isn't really "choosing" it — but it still gets a full interval
+variable and still participates in `AddNoOverlap`, since it still occupies
+real space on the calendar that other tasks must be scheduled around; REQ-31
+(conflicting fixed tasks) is caught separately, at add/edit time, so this
+never has to fail at solve time.
+
+A task with more than one occurrence (`fixed_days`/`fixed` with 2+ days) uses
+a per-occurrence variable label, `"<task name> (<day>)"`, so each occurrence
+is individually identifiable in the model description; a single-occurrence
+task's label is just its name, unchanged from before. Every occurrence of a
+task shares that task's `name` in the `schedule` output, so a recurring task
+simply produces multiple calendar entries with the same name (see the
+`data/tasks.json` example above).
 
 ## Flask API
 
 Tasks are identified by name in the URL, since REQ-1/REQ-2 already require
 names to be unique — no separate generated ID is needed.
 
-| Method | Path            | Body                           | Response                                |
-| ------ | --------------- | ------------------------------ | --------------------------------------- |
-| GET    | `/tasks`        | —                              | list of tasks                           |
-| POST   | `/tasks`        | `{name, duration_minutes}`     | created task, or 409 if name exists     |
-| PUT    | `/tasks/<name>` | `{name?, duration_minutes?}`   | updated task                            |
-| DELETE | `/tasks/<name>` | —                              | 204                                     |
-| GET    | `/model`        | —                              | model description (see below)           |
-| POST   | `/solve`        | `{parameters?}`                | `{schedule: [...]}` or `{error: "..."}` |
+| Method | Path            | Body                                                        | Response                                |
+| ------ | --------------- | ------------------------------------------------------------ | ---------------------------------------- |
+| GET    | `/tasks`        | —                                                            | list of tasks                           |
+| POST   | `/tasks`        | `{name, duration_minutes, schedule_mode?, days?, hour?}`    | created task, or 409/400 (see below)    |
+| PUT    | `/tasks/<name>` | `{name?, duration_minutes?, schedule_mode?, days?, hour?}`  | updated task, or 409/400 (see below)    |
+| DELETE | `/tasks/<name>` | —                                                            | 204                                     |
+| GET    | `/model`        | —                                                            | model description (see below)           |
+| POST   | `/solve`        | `{parameters?}`                                              | `{schedule: [...]}` or `{error: "..."}` |
 
 - `POST /tasks` and `PUT /tasks/<name>` validate that `duration_minutes` is a
-  positive multiple of 15 (REQ-3).
+  positive multiple of 15 (REQ-3); that `schedule_mode` (defaulting to
+  `"flexible"` when omitted) is one of the four allowed values; that `days`
+  is a non-empty subset of `scheduler.DAYS` when the mode is `fixed_days` or
+  `fixed`; that `hour` is an integer 0-23 when the mode is `fixed_hour` or
+  `fixed`; and that the task fits within a single day for any non-`flexible`
+  mode (`duration_minutes <= 1440`, and for `fixed_hour`/`fixed`,
+  `hour * 60 + duration_minutes <= 1440`) — 400 on any failure. `days`/`hour`
+  are normalized to `[]`/`null` when not relevant to the chosen mode.
+- When the resulting task's mode is `fixed`, its occurrences (via
+  `scheduler.fixed_ranges`) are checked against every other existing `fixed`
+  task's occurrences (REQ-31); an overlap returns 409 instead of saving.
 - `POST /solve` runs `scheduler.py` against the current task list, persists
   the result via `storage.py` on success, and never runs implicitly on
   add/edit/remove (REQ-12).
@@ -207,20 +275,41 @@ last-active tab persists only for the current page session (not saved to
 
 #### Task form
 
-- Two inputs: task name (text) and duration in minutes (number, `step="15"`,
-  `min="15"`).
-- One "Add" button, submits `POST /tasks`.
-- On duplicate-name (409) or invalid-duration (400) response, an inline
-  validation message appears under the form; no browser `alert()`.
+- Inputs: task name (text), duration in minutes (number, `step="15"`,
+  `min="15"`), and a **scheduling mode** select (REQ-26) with four options:
+  Flexible, Fixed hour, Fixed day(s), Fixed.
+- A day checkbox group (Sun–Sat) and an hour select (00–23) sit below the
+  mode select; `app.js` shows/hides them based on the chosen mode — the day
+  group only for Fixed day(s)/Fixed, the hour select only for Fixed
+  hour/Fixed — so a field is only visible when it actually affects
+  placement (see "Scheduling Modes" under CP-SAT Model for why the other
+  combinations leave day/hour unused). This is what keeps the form from
+  showing a day picker whose selection would silently do nothing.
+- One "Add" button, submits `POST /tasks` with `schedule_mode`, `days`
+  (array of checked day names), and `hour` alongside `name`/
+  `duration_minutes`.
+- On duplicate-name (409), fixed-task overlap (409), or validation failure
+  (400 — invalid duration, missing/invalid mode-specific fields) response,
+  an inline validation message appears under the form; no browser `alert()`.
 
 #### Task list
 
 - Plain list/table below the form, one row per task: name, duration
-  (formatted as e.g. "1h 30m"), an "Edit" and a "Remove" action.
+  (formatted as e.g. "1h 30m"), a short scheduling-mode summary (e.g. "Fixed
+  hour: 14:00", "Fixed days: Mon, Wed", "Fixed: Tue, Thu · 09:00", or nothing
+  for Flexible), an "Edit" and a "Remove" action.
+- REQ-32: a task whose mode is Fixed gets a `task-fixed` class, rendering the
+  row in the distinct fixed-task shade (see Color Scheme) instead of the
+  default row background — the same visual distinction REQ-32 requires on
+  the Schedule tab's blocks.
 - "Remove" calls `DELETE /tasks/<name>` immediately (no confirmation dialog,
-  given the app's minimal scope).
-- "Edit" turns that row's name/duration into editable inputs in place, with
+  given the app's minimal scope); removes every occurrence of a recurring
+  task in one action, since it is one task list entry regardless of mode.
+- "Edit" turns that row's name/duration/mode/day/hour into the same set of
+  editable inputs as the Add form, in place, pre-filled from the task, with
   "Save" (`PUT /tasks/<name>`) and "Cancel" actions; no separate edit modal.
+  Editing affects all of a recurring task's occurrences together — there is
+  no per-occurrence edit.
 - The list is empty-state aware: shows a plain "No tasks yet" message when
   empty.
 
@@ -282,12 +371,14 @@ the settings that control the search (REQ-23, REQ-24, REQ-25).
   built to be read, never solved, so the section fills in without ever
   clicking Solve.
 - A **Variables** table, styled like the parameter table above (both use the
-  shared `.spec-table` class), with one row per variable: name, kind, and
-  domain. Start variables are `IntVar (start slot)` with the numeric domain
-  `[0, HORIZON_SLOTS - duration]`; interval variables have no numeric domain
-  of their own, so an `IntervalVar` row shows the `start + duration = end`
-  relationship instead; the makespan is `IntVar (objective)` over
-  `[0, HORIZON_SLOTS]`.
+  shared `.spec-table` class), with one row per occurrence variable: name,
+  kind, and domain. Start variables are `IntVar (start slot)`; the domain
+  shown depends on the task's scheduling mode (a single `[lo, hi]` range for
+  Flexible/Fixed day(s), a `∪`-joined set of ranges for Fixed hour, a
+  single-value range for Fixed — see "Scheduling Modes" above). Interval
+  variables have no numeric domain of their own, so an `IntervalVar` row
+  shows the `start + duration = end` relationship instead; the makespan is
+  `IntVar (objective)` over `[0, HORIZON_SLOTS]`.
 - A **Constraints** list, one card per constraint: the CP-SAT method that
   created it (`AddNoOverlap`, `AddMaxEquality`), a plain-language description,
   and the variables it links.
@@ -305,9 +396,16 @@ the settings that control the search (REQ-23, REQ-24, REQ-25).
 
 - CSS Grid, 7 columns (Sun–Sat) with a header row of day labels, and rows
   representing 15-minute slots across 24 hours (96 rows).
-- Each scheduled task renders as a single labeled block spanning its
+- Each scheduled occurrence renders as a single labeled block spanning its
   day/start/end slots, showing the task name; text truncates with ellipsis
-  if the block is too narrow/short to fit it.
+  if the block is too narrow/short to fit it. A recurring task (Fixed
+  day(s)/Fixed with 2+ days) simply produces one block per selected day, all
+  sharing that name — the grid has no notion of "recurrence," it just draws
+  every entry in `schedule` as its own block.
+- REQ-32: blocks for a Fixed-mode task get the `schedule-block-fixed` class
+  (from each entry's `fixed: true` flag), rendering in the distinct
+  fixed-task color instead of the default accent color used for
+  Flexible/Fixed hour/Fixed day(s) blocks.
 - A lightweight hour gridline/label down the side (e.g. every 4th row) gives
   time-of-day reference without turning this into a full calendar-library
   feature set.
@@ -387,6 +485,14 @@ a page whose middle tab exposes solver internals.
 | `--accent`      | `#FF8A3D`                | active tab underline, Solve/Add buttons, scheduled task blocks   |
 | `--accent-ink`  | `#241200`                | text on top of solid `--accent` fills                            |
 | `--accent-2`    | `#FFFFFF`                | headings: banner title, table headers, schedule day/hour labels  |
+| `--fixed`       | `#3D5A73`                | Fixed-mode task list rows and schedule blocks (REQ-32)           |
+| `--fixed-ink`   | `#EAF4FB`                | text on top of solid `--fixed` fills                              |
+
+A Fixed-mode task uses `--fixed`/`--fixed-ink` instead of `--accent`/
+`--accent-ink` precisely because "fixed" tasks are not being optimized —
+giving them a cooler, desaturated shade distinct from the amber used for
+tasks CP-SAT actively places keeps that distinction visible at a glance in
+both the task list and the schedule grid.
 
 Applied via CSS custom properties in `style.css`; no separate dark/light
 mode is defined, since the palette itself is already dark and this is a

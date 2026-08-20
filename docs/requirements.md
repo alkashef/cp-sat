@@ -90,3 +90,29 @@ tunable, not hidden behind a fixed configuration.
 - REQ-22: WHEN the user activates a help icon, the system shall display a
   plain-language explanation of that CP-SAT concept for a reader who has
   never used OR-Tools before.
+
+## Task Scheduling Constraints
+
+- REQ-26: The system shall allow the user to set a task's scheduling mode to
+  one of: Flexible, Fixed hour, Fixed day(s), or Fixed; a set of one or more
+  days of the week; and a starting hour (0-23). A task defaults to Flexible
+  with no days or hour set.
+- REQ-27: WHEN a task's scheduling mode is Flexible, the system shall place
+  one occurrence of the task anywhere in the week, chosen to minimize idle
+  time (REQ-10's existing behavior, unaffected by any day/hour selection).
+- REQ-28: WHEN a task's scheduling mode is Fixed hour, the system shall place
+  one occurrence of the task starting at the selected hour, on whichever day
+  of the week minimizes idle time; the selected day(s), if any, have no
+  effect on this placement.
+- REQ-29: WHEN a task's scheduling mode is Fixed day(s), the system shall
+  place one occurrence of the task on each selected day, with the start time
+  on each day chosen to minimize idle time.
+- REQ-30: WHEN a task's scheduling mode is Fixed, the system shall place one
+  occurrence of the task on each selected day, each starting at the selected
+  hour; these occurrences are not subject to optimization.
+- REQ-31: IF adding or editing a task would make two Fixed-mode tasks'
+  occurrences overlap in time, THEN the system shall reject the add/edit
+  with an error and leave existing tasks unchanged.
+- REQ-32: The system shall display Fixed-mode tasks with a shade/color
+  visually distinct from other tasks, in both the task list and the
+  schedule calendar.
