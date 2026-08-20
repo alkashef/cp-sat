@@ -1,46 +1,98 @@
 {
   "tasks": [
     {
-      "name": "test",
-      "duration_minutes": 30
+      "name": "t flex",
+      "duration_minutes": 120,
+      "schedule_mode": "flexible",
+      "days": [],
+      "hour": null
     },
     {
-      "name": "test 2",
-      "duration_minutes": 45
+      "name": "t fix hr",
+      "duration_minutes": 120,
+      "schedule_mode": "fixed_hour",
+      "days": [],
+      "hour": 18
     },
     {
-      "name": "task 4",
-      "duration_minutes": 120
+      "name": "t fix day",
+      "duration_minutes": 30,
+      "schedule_mode": "fixed_days",
+      "days": [
+        "Mon",
+        "Wed",
+        "Sat"
+      ],
+      "hour": null
     },
     {
-      "name": "task 3",
-      "duration_minutes": 1005
+      "name": "t fix",
+      "duration_minutes": 360,
+      "schedule_mode": "fixed",
+      "days": [
+        "Sun",
+        "Tue",
+        "Thu"
+      ],
+      "hour": 9
     }
   ],
   "schedule": [
     {
-      "name": "test",
-      "day": "Sun",
-      "start_minutes": 1170,
-      "end_minutes": 1200
-    },
-    {
-      "name": "test 2",
-      "day": "Sun",
-      "start_minutes": 1125,
-      "end_minutes": 1170
-    },
-    {
-      "name": "task 4",
-      "day": "Sun",
-      "start_minutes": 1005,
-      "end_minutes": 1125
-    },
-    {
-      "name": "task 3",
+      "name": "t flex",
       "day": "Sun",
       "start_minutes": 0,
-      "end_minutes": 1005
+      "end_minutes": 120,
+      "fixed": false
+    },
+    {
+      "name": "t fix hr",
+      "day": "Sun",
+      "start_minutes": 1080,
+      "end_minutes": 1200,
+      "fixed": false
+    },
+    {
+      "name": "t fix day",
+      "day": "Mon",
+      "start_minutes": 0,
+      "end_minutes": 30,
+      "fixed": false
+    },
+    {
+      "name": "t fix day",
+      "day": "Wed",
+      "start_minutes": 0,
+      "end_minutes": 30,
+      "fixed": false
+    },
+    {
+      "name": "t fix day",
+      "day": "Sat",
+      "start_minutes": 0,
+      "end_minutes": 30,
+      "fixed": false
+    },
+    {
+      "name": "t fix",
+      "day": "Sun",
+      "start_minutes": 540,
+      "end_minutes": 900,
+      "fixed": true
+    },
+    {
+      "name": "t fix",
+      "day": "Tue",
+      "start_minutes": 540,
+      "end_minutes": 900,
+      "fixed": true
+    },
+    {
+      "name": "t fix",
+      "day": "Thu",
+      "start_minutes": 540,
+      "end_minutes": 900,
+      "fixed": true
     }
   ]
 }
