@@ -73,9 +73,6 @@ tunable, not hidden behind a fixed configuration.
 
 ## Model Inspection
 
-- REQ-23: The system shall display, for the current task list, the CP-SAT
-  model's decision variables with their domains, its constraints, and its
-  objective.
 - REQ-24: The system shall display the raw CP-SAT model handed to the solver,
   in the solver's own text representation.
 - REQ-25: The system shall build the displayed model from the current task

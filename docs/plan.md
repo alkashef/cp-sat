@@ -367,8 +367,13 @@ CP-SAT receives — built from the current task list on every visit to the
 tab, without solving. `_build_model` now returns its interval and makespan
 variables too, so `solve()` and `describe_model()` share one construction.
 
-- **Covers:** REQ-23, REQ-24, REQ-25 (and REQ-21/REQ-22 for the section's
-  help icon)
+  *Update:* the frontend now renders only the raw `model.Proto()` dump — the
+  friendly variables table and constraints list described below were removed
+  from the Solver tab. `GET /model` is unchanged and still returns
+  `variables`/`constraints`/`objective` alongside `raw_proto`; see "Model
+  section" in `docs/design.md`.
+
+- **Covers:** REQ-24, REQ-25 (and REQ-21/REQ-22 for the section's help icon)
 - **pytest:**
   - `test_scheduler.py`: `describe_model()` lists a start and an interval
     variable per task plus the makespan; start domains stop at
@@ -449,8 +454,8 @@ schedule grid.
   - Try adding a second "Fixed" task whose day+hour overlaps the first;
     confirm an inline error appears and the task is not added.
   - Switch to the Solver tab with a mix of all four modes in the task list
-    and confirm the Model section's Variables table lists one row per
-    occurrence with a sensible domain for each mode.
+    and confirm the Model section's raw CP-SAT model dump lists an interval
+    for each occurrence with a sensible domain for each mode.
 - **Model:** claude-sonnet-5
 - **Thinking mode:** off
 - **Effort level:** high

@@ -341,66 +341,17 @@ async function fetchModel() {
     return response.json();
 }
 
-function modelVariableRow(variable) {
-    const row = document.createElement("tr");
-
-    const nameCell = document.createElement("td");
-    const name = document.createElement("code");
-    name.textContent = variable.name;
-    nameCell.appendChild(name);
-
-    const kindCell = document.createElement("td");
-    kindCell.textContent = variable.kind;
-
-    const domainCell = document.createElement("td");
-    domainCell.className = "model-domain";
-    domainCell.textContent = variable.domain;
-
-    row.appendChild(nameCell);
-    row.appendChild(kindCell);
-    row.appendChild(domainCell);
-    return row;
-}
-
-function modelConstraintItem(constraint) {
-    const item = document.createElement("li");
-
-    const type = document.createElement("code");
-    type.textContent = constraint.type;
-
-    const description = document.createElement("span");
-    description.textContent = constraint.description;
-
-    const variables = document.createElement("span");
-    variables.className = "model-constraint-variables";
-    variables.textContent = constraint.variables.join(", ");
-
-    item.appendChild(type);
-    item.appendChild(description);
-    item.appendChild(variables);
-    return item;
-}
-
-// Fills the Solver tab's Model section from a GET /model response: the
-// variables table, the constraints list, and the raw protobuf dump.
+// Fills the Solver tab's Model section from a GET /model response with the
+// raw protobuf dump.
 function renderModel(model) {
     const body = document.getElementById("model-body");
     const empty = document.getElementById("model-empty");
-    const rows = document.querySelector("#model-variables tbody");
-    const constraints = document.getElementById("model-constraints");
 
-    const hasModel = model.variables.length !== 0;
+    const hasModel = model.raw_proto !== "";
     body.hidden = !hasModel;
     empty.hidden = hasModel;
-
-    rows.innerHTML = "";
-    constraints.innerHTML = "";
     if (!hasModel) return;
 
-    model.variables.forEach((variable) => rows.appendChild(modelVariableRow(variable)));
-    model.constraints.forEach((constraint) =>
-        constraints.appendChild(modelConstraintItem(constraint))
-    );
     document.querySelector("#model-raw pre").textContent = model.raw_proto;
 }
 

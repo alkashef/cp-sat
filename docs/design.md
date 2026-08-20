@@ -157,7 +157,7 @@ an unschedulable task list is an ordinary return value rather than an exception.
 An empty task list returns an empty schedule without invoking the solver.
 
 `describe_model(tasks)` is the read-only counterpart behind `GET /model`
-(REQ-23, REQ-24, REQ-25). It builds the same model through the shared
+(REQ-24, REQ-25). It builds the same model through the shared
 `_build_model(tasks)` helper — which returns the model along with each
 occurrence's start and interval variable and the makespan variable, so neither
 caller duplicates the construction — and returns a JSON-serializable
@@ -360,9 +360,9 @@ last-active tab persists only for the current page session (not saved to
 
 #### Model section
 
-Below the parameter table, a "Model" section shows the CP-SAT model built from
-the current task list, so the model itself is visible in the UI and not just
-the settings that control the search (REQ-23, REQ-24, REQ-25).
+Below the parameter table, a "Model" section shows the raw CP-SAT model built
+from the current task list, so the model itself is visible in the UI and not
+just the settings that control the search (REQ-24, REQ-25).
 
 - Populated from `GET /model` every time the Solver tab becomes active, the
   same lazy-on-switch pattern the Schedule tab uses. Re-fetching on each visit
@@ -370,27 +370,16 @@ the settings that control the search (REQ-23, REQ-24, REQ-25).
   and no fetch on every task edit. It is independent of solving: the model is
   built to be read, never solved, so the section fills in without ever
   clicking Solve.
-- A **Variables** table, styled like the parameter table above (both use the
-  shared `.spec-table` class), with one row per occurrence variable: name,
-  kind, and domain. Start variables are `IntVar (start slot)`; the domain
-  shown depends on the task's scheduling mode (a single `[lo, hi]` range for
-  Flexible/Fixed day(s), a `∪`-joined set of ranges for Fixed hour, a
-  single-value range for Fixed — see "Scheduling Modes" above). Interval
-  variables have no numeric domain of their own, so an `IntervalVar` row
-  shows the `start + duration = end` relationship instead; the makespan is
-  `IntVar (objective)` over `[0, HORIZON_SLOTS]`.
-- A **Constraints** list, one card per constraint: the CP-SAT method that
-  created it (`AddNoOverlap`, `AddMaxEquality`), a plain-language description,
-  and the variables it links.
 - A collapsible **Raw CP-SAT model** `<details>` holding the `raw_proto` text
-  — the same model in CP-SAT's own protobuf form, listing every variable and
+  — the model in CP-SAT's own protobuf form, listing every variable and
   constraint as the solver receives them. The native HTML disclosure widget
-  keeps this free of extra JS state.
+  keeps this free of extra JS state. The `GET /model` response still carries
+  `variables`/`constraints`/`objective` alongside `raw_proto` (see "Flask
+  API" above), but only `raw_proto` is rendered — the frontend no longer
+  shows a separate friendly summary of them.
 - With zero tasks, the section shows an empty state ("No tasks yet — add tasks
-  to see the model.") in place of the tables, matching `#task-list-empty` and
-  `#schedule-empty`.
-- The objective is not repeated here: the read-only `objective` row at the top
-  of the parameter table already states it.
+  to see the model.") in place of the raw dump, matching `#task-list-empty`
+  and `#schedule-empty`.
 
 ### Tab 3: Schedule
 
