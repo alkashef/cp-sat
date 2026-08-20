@@ -58,77 +58,82 @@
         </section>
 
         <section id="tab-solver" class="tab-panel">
-            <table id="solver-params" class="spec-table">
-                <thead>
-                    <tr>
-                        <th>Parameter</th>
-                        <th>Description</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="solver-objective">
-                        <td>
-                            <code>objective</code>
-                            <button type="button" class="help-icon" aria-label="What is this?" data-help="objective">?</button>
-                        </td>
-                        <td>What the solver optimizes for, once it has a valid arrangement.</td>
-                        <td class="solver-objective-value">Minimize makespan (idle time)</td>
-                    </tr>
-                    <tr data-param="num_search_workers">
-                        <td>
-                            <code>num_search_workers</code>
-                            <button type="button" class="help-icon" aria-label="What is this?" data-help="num_search_workers">?</button>
-                        </td>
-                        <td>How many threads CP-SAT searches with at once.</td>
-                        <td><input type="number" min="1" step="1"></td>
-                    </tr>
-                    <tr data-param="max_time_in_seconds">
-                        <td>
-                            <code>max_time_in_seconds</code>
-                            <button type="button" class="help-icon" aria-label="What is this?" data-help="max_time_in_seconds">?</button>
-                        </td>
-                        <td>How long the solver may run before returning its best answer so far.</td>
-                        <td><input type="number" min="0.1" step="0.1"></td>
-                    </tr>
-                    <tr data-param="log_search_progress">
-                        <td>
-                            <code>log_search_progress</code>
-                            <button type="button" class="help-icon" aria-label="What is this?" data-help="log_search_progress">?</button>
-                        </td>
-                        <td>Prints the solver's internal search log when on.</td>
-                        <td><input type="checkbox"></td>
-                    </tr>
-                    <tr data-param="randomize_search">
-                        <td>
-                            <code>randomize_search</code>
-                            <button type="button" class="help-icon" aria-label="What is this?" data-help="randomize_search">?</button>
-                        </td>
-                        <td>Shuffles the solver's internal search order.</td>
-                        <td><input type="checkbox"></td>
-                    </tr>
-                    <tr data-param="relative_gap_limit">
-                        <td>
-                            <code>relative_gap_limit</code>
-                            <button type="button" class="help-icon" aria-label="What is this?" data-help="relative_gap_limit">?</button>
-                        </td>
-                        <td>Lets the solver stop early once it's within this fraction of the best possible answer.</td>
-                        <td><input type="number" min="0" step="0.01"></td>
-                    </tr>
-                </tbody>
-            </table>
-            <button type="button" id="solver-reset">Reset to defaults</button>
+            <div class="solver-columns">
+                <section id="solver-parameters">
+                    <h2>Parameters</h2>
+                    <table id="solver-params" class="spec-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="solver-objective">
+                                <td>
+                                    <code>objective</code>
+                                    <button type="button" class="help-icon" aria-label="What is this?" data-help="objective">?</button>
+                                </td>
+                                <td>What the solver optimizes for, once it has a valid arrangement.</td>
+                                <td class="solver-objective-value">Minimize makespan (idle time)</td>
+                            </tr>
+                            <tr data-param="num_search_workers">
+                                <td>
+                                    <code>num_search_workers</code>
+                                    <button type="button" class="help-icon" aria-label="What is this?" data-help="num_search_workers">?</button>
+                                </td>
+                                <td>How many threads CP-SAT searches with at once.</td>
+                                <td><input type="number" min="1" step="1"></td>
+                            </tr>
+                            <tr data-param="max_time_in_seconds">
+                                <td>
+                                    <code>max_time_in_seconds</code>
+                                    <button type="button" class="help-icon" aria-label="What is this?" data-help="max_time_in_seconds">?</button>
+                                </td>
+                                <td>How long the solver may run before returning its best answer so far.</td>
+                                <td><input type="number" min="0.1" step="0.1"></td>
+                            </tr>
+                            <tr data-param="log_search_progress">
+                                <td>
+                                    <code>log_search_progress</code>
+                                    <button type="button" class="help-icon" aria-label="What is this?" data-help="log_search_progress">?</button>
+                                </td>
+                                <td>Prints the solver's internal search log when on.</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr data-param="randomize_search">
+                                <td>
+                                    <code>randomize_search</code>
+                                    <button type="button" class="help-icon" aria-label="What is this?" data-help="randomize_search">?</button>
+                                </td>
+                                <td>Shuffles the solver's internal search order.</td>
+                                <td><input type="checkbox"></td>
+                            </tr>
+                            <tr data-param="relative_gap_limit">
+                                <td>
+                                    <code>relative_gap_limit</code>
+                                    <button type="button" class="help-icon" aria-label="What is this?" data-help="relative_gap_limit">?</button>
+                                </td>
+                                <td>Lets the solver stop early once it's within this fraction of the best possible answer.</td>
+                                <td><input type="number" min="0" step="0.01"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="button" id="solver-reset">Reset to defaults</button>
+                </section>
 
-            <section id="model">
-                <h2>
-                    Model
-                    <button type="button" class="help-icon" aria-label="What is this?" data-help="model">?</button>
-                </h2>
-                <div id="model-body">
-                    <pre id="model-raw"></pre>
-                </div>
-                <p id="model-empty" class="empty-state" hidden>No tasks yet — add tasks to see the model.</p>
-            </section>
+                <section id="model">
+                    <h2>
+                        Model
+                        <button type="button" class="help-icon" aria-label="What is this?" data-help="model">?</button>
+                    </h2>
+                    <div id="model-body">
+                        <pre id="model-raw"></pre>
+                    </div>
+                    <p id="model-empty" class="empty-state" hidden>No tasks yet — add tasks to see the model.</p>
+                </section>
+            </div>
         </section>
 
         <section id="tab-schedule" class="tab-panel">

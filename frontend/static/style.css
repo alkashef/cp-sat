@@ -366,6 +366,17 @@ button:disabled {
     text-align: left;
 }
 
+.solver-columns {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.solver-columns > section {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
 #model-raw {
     margin: 0;
     padding: 0.75rem;

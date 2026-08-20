@@ -328,6 +328,11 @@ last-active tab persists only for the current page session (not saved to
 
 ### Tab 2: Solver
 
+The tab is laid out as two columns side by side, `.solver-columns` holding a
+`#solver-parameters` section (the parameter table below) and the `#model`
+section (see "Model section" below) as equal-width flex items, so the search
+settings and the model they build sit next to each other rather than stacked.
+
 - A leading read-only `objective` row states what CP-SAT is optimizing for
   (minimizing the schedule's makespan/idle time) before the editable
   parameter rows that control how it searches for that optimum. It follows
@@ -360,9 +365,10 @@ last-active tab persists only for the current page session (not saved to
 
 #### Model section
 
-Below the parameter table, a "Model" section shows the raw CP-SAT model built
-from the current task list, so the model itself is visible in the UI and not
-just the settings that control the search (REQ-24, REQ-25).
+Beside the parameter table (see "Tab 2: Solver" above for the two-column
+layout), a "Model" section shows the raw CP-SAT model built from the current
+task list, so the model itself is visible in the UI and not just the
+settings that control the search (REQ-24, REQ-25).
 
 - Populated from `GET /model` every time the Solver tab becomes active, the
   same lazy-on-switch pattern the Schedule tab uses. Re-fetching on each visit
